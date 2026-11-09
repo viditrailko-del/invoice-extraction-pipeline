@@ -74,6 +74,6 @@ def test_get_missing_invoice_404(client):
 
 
 def test_list_filters_by_status(client):
-    upload(client)
-    assert len(client.get("/invoices", params={"status": "pending"}).json()) == 1
-    assert client.get("/invoices", params={"status": "needs_review"}).json() == []
+    upload(client)  # fake LLM succeeds -> needs_review
+    assert len(client.get("/invoices", params={"status": "needs_review"}).json()) == 1
+    assert client.get("/invoices", params={"status": "approved"}).json() == []

@@ -1,7 +1,17 @@
 import hashlib
 import uuid
+from collections.abc import Callable
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Query,
+    Response,
+    UploadFile,
+    status,
+)
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
@@ -9,6 +19,9 @@ from sqlalchemy.orm import Session, selectinload
 from app.config import Settings, get_settings
 from app.db.models import Invoice, InvoiceStatus
 from app.db.session import get_db
+from app.extraction.client import Extractor
+from app.extraction.deps import get_extractor, get_session_factory
+from app.extraction.service import process_invoice
 from app.schemas.invoice import InvoiceOut, UploadResult
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
@@ -38,8 +51,11 @@ def _get_by_hash(db: Session, file_hash: str) -> Invoice | None:
 async def upload_invoice(
     file: UploadFile,
     response: Response,
+    background: BackgroundTasks,
     db: Session = Depends(get_db),
     settings: Settings = Depends(get_settings),
+    extractor: Extractor = Depends(get_extractor),
+    session_factory: Callable[[], Session] = Depends(get_session_factory),
 ) -> UploadResult:
     if file.content_type not in ALLOWED_TYPES:
         raise HTTPException(
@@ -90,8 +106,35 @@ async def upload_invoice(
         return UploadResult(invoice=InvoiceOut.model_validate(existing), duplicate=True)
 
     db.refresh(invoice, attribute_names=["flags", "created_at", "updated_at"])
-    # Phase 2: enqueue extraction here via BackgroundTasks.
+    # Respond immediately (status=pending); extraction runs after the response is sent.
+    background.add_task(process_invoice, invoice.id, session_factory, extractor, settings)
     return UploadResult(invoice=InvoiceOut.model_validate(invoice), duplicate=False)
+
+
+@router.post("/{invoice_id}/retry", response_model=InvoiceOut, status_code=status.HTTP_202_ACCEPTED)
+def retry_extraction(
+    invoice_id: uuid.UUID,
+    background: BackgroundTasks,
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+    extractor: Extractor = Depends(get_extractor),
+    session_factory: Callable[[], Session] = Depends(get_session_factory),
+) -> InvoiceOut:
+    """Re-run extraction for an invoice that failed (e.g. Gemini was overloaded)."""
+    invoice = db.scalar(
+        select(Invoice).options(selectinload(Invoice.flags)).where(Invoice.id == invoice_id)
+    )
+    if invoice is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Invoice not found")
+    if invoice.status != InvoiceStatus.extraction_failed:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, f"Only failed extractions can be retried (status={invoice.status.value})"
+        )
+    invoice.status = InvoiceStatus.pending
+    invoice.attempts = 0  # a human asked for it: give it a fresh set of attempts
+    db.commit()
+    background.add_task(process_invoice, invoice.id, session_factory, extractor, settings)
+    return InvoiceOut.model_validate(invoice)
 
 
 @router.get("/{invoice_id}", response_model=InvoiceOut)

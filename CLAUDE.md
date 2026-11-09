@@ -86,6 +86,28 @@ tests/
 9. Route handlers stay thin; logic lives in `extraction/` and `checks/`.
 10. Schema changes go through an Alembic migration — never edit the DB by hand.
 
+## Extraction notes (learned the hard way)
+
+- Main model `gemini-3.5-flash`, fallback `gemini-3.5-flash-lite` (set in `.env` / `app/config.py`). ~3s per invoice.
+- `thinking_level="low"`: the default/high thinking took 80–160s for identical output. `minimal` is rejected by these models.
+- Newest models (e.g. `gemini-3.8-flash`) were frequently 503-overloaded. `gemini-2.5-*` returns 404 for new keys.
+- `google-genai` is v3.x: verify its API in the container before assuming older docs apply.
+- Schema: `app/schemas/extraction.py` → passed as `response_json_schema`. Gemini returns money as JSON numbers; Pydantic turns them into `Decimal`; stored as strings.
+- Comparing `Decimal("1858.8") == 1858.8` is **False**. Always compare money to `Decimal("...")`, never float literals.
+- Extraction runs in FastAPI `BackgroundTasks` (`app/extraction/service.py`). `POST /invoices/{id}/retry` re-runs failed ones.
+- Generate a test invoice: `docker compose exec -T api uv run --frozen python scripts/make_sample_invoice.py storage/samples/x.pdf`
+
+## Reliability design (decided, don't undo)
+
+- **No lost jobs:** `process_invoice` first *claims* the invoice with one atomic `UPDATE ... WHERE status='pending'` (→ `processing`, `attempts+1`). Only one worker can win, so nothing runs twice.
+- On server startup, `recover_stuck_jobs` re-queues everything left in `pending`/`processing`. This **assumes a single API instance**; with several instances it must become a real job queue (Phase 6).
+- Poison files: after `MAX_JOB_ATTEMPTS` (3) worker pickups → `extraction_failed`. `POST /invoices/{id}/retry` resets `attempts` to 0.
+- **Business duplicates** (same invoice, different file): `app/checks/duplicates.py` builds `dup_key` = normalized vendor + invoice number, stored in an indexed column. A match adds an `error` flag (never a silent reject); a human decides.
+- Known limits: a vendor name that differs beyond legal suffixes (Ltd/Inc/...) won't match. Two copies processed at the exact same moment may miss each other.
+- Alembic autogenerate does **not** detect new Postgres enum values: add `ALTER TYPE ... ADD VALUE` by hand.
+- A new derived column needs a **backfill** for old rows (see `scripts/backfill_dup_keys.py`, run with `python -m scripts.<name>`). Backfills must be idempotent.
+- Tests set `RECOVER_ON_STARTUP=false` (in `tests/conftest.py`) so startup never touches the dev DB or real Gemini.
+
 ## Scope discipline
 
 Build in phase order. Don't add queues, auth, S3, or a frontend until the eval harness (Phase 5) works.
@@ -94,7 +116,7 @@ Build in phase order. Don't add queues, auth, S3, or a frontend until the eval h
 |---|---|---|
 | 0 | Ground-truth fixtures (20–30 labeled invoices) | todo |
 | 1 | Skeleton: FastAPI + Postgres + Alembic + upload/get, idempotent hashing | done |
-| 2 | Gemini extraction + Pydantic validation + retry + raw storage | todo |
+| 2 | Gemini extraction + Pydantic validation + retry + raw storage | done |
 | 3 | Deterministic checks + flags + status | todo |
 | 4 | Review endpoints: list flagged, PATCH corrections w/ audit | todo |
 | 5 | Eval harness: field accuracy, flag precision/recall, cost/latency | todo |

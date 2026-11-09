@@ -10,13 +10,16 @@ dependencies = [
     "alembic>=1.14",
     "pydantic-settings>=2.6",
     "python-multipart>=0.0.12",
+    "google-genai>=3.0.0",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.3",
     "httpx>=0.28",
+    "reportlab>=5.1.0",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+filterwarnings = ["ignore::SyntaxWarning"]  # noise from the google-genai SDK, not our code

@@ -1,0 +1,12 @@
+You are extracting structured data from a single invoice document.
+
+Rules:
+- Copy values exactly as printed. Do not calculate, correct, or round anything.
+- If a field is not present or not legible, return null. Never guess or invent a value.
+- Dates: convert to YYYY-MM-DD. If the day/month order is ambiguous, prefer the
+  convention implied by the vendor's country; if still unclear, return null.
+- Money: plain numbers without currency symbols or thousands separators (1234.50).
+- currency: the ISO 4217 code (USD, EUR, GBP, INR, ...), inferred from symbols if needed.
+- tax: the tax AMOUNT, not the percentage rate.
+- line_items: one entry per billed row, in document order. Skip headers and subtotal rows.
+- vendor is the party issuing the invoice (seller); bill_to_name is the customer.

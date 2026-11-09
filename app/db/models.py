@@ -28,7 +28,8 @@ class Base(DeclarativeBase):
 
 
 class InvoiceStatus(str, enum.Enum):
-    pending = "pending"
+    pending = "pending"  # waiting for a worker to pick it up
+    processing = "processing"  # a worker has claimed it and is calling the LLM
     approved = "approved"
     needs_review = "needs_review"
     extraction_failed = "extraction_failed"
@@ -54,6 +55,14 @@ class Invoice(Base):
         index=True,
     )
     extracted_json: Mapped[dict[str, Any] | None] = mapped_column(JsonType)
+    # How many times a worker has picked this up. Stops a "poison" file that crashes
+    # the server from being retried forever on every restart.
+    attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    processing_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Normalized "vendor|invoice_number" for business-duplicate search. Indexed column,
+    # not a JSON lookup, so it stays fast with millions of invoices. NOT unique: a
+    # duplicate is flagged for a human, never silently rejected.
+    dup_key: Mapped[str | None] = mapped_column(String(300), index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
