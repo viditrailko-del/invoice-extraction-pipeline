@@ -9,7 +9,8 @@ Backend service: invoice PDFs/images → Gemini structured extraction → Pydant
 ```
 Upload (POST /invoices)
   → store file + SHA-256 hash (idempotent: same file → same record)
-  → background task: Gemini structured output (raw response saved first)
+  → background task claims it (status pending → processing)
+  → Gemini structured output (raw response saved first)
   → Pydantic validation (1 retry with the validation error fed back)
   → deterministic checks → field_flags
   → status = approved | needs_review | extraction_failed
@@ -55,11 +56,13 @@ Secrets live in `.env` (never committed); `.env.example` lists the keys (`GEMINI
 app/
   main.py            FastAPI app + routers
   api/               route handlers (thin — no business logic)
-  schemas/           Pydantic models: Invoice, LineItem, Vendor (source of truth)
+  schemas/           Pydantic models: extraction.py = ExtractedInvoice, LineItem, Vendor (source of truth);
+                     invoice.py = API response models
   extraction/        Gemini client, prompts/ (versioned: v1.txt, v2.txt)
   checks/            deterministic check functions (pure)
   db/                SQLAlchemy models, session
 alembic/             migrations
+scripts/             one-off helpers (sample invoice generator, backfills); run with python -m scripts.<name>
 eval/
   fixtures/          invoice files + hand-labeled expected JSON
   run.py             eval CLI
@@ -68,8 +71,8 @@ tests/
 
 ## Data model
 
-- `invoices` — id, file_hash (unique), file_path, status, extracted_json, created_at
-- `extraction_runs` — invoice_id, raw_response, model, prompt_version, latency_ms, tokens, cost
+- `invoices` — id, file_hash (unique), file_path, status (pending/processing/needs_review/approved/extraction_failed), extracted_json, attempts, processing_started_at, dup_key (indexed), created_at, updated_at
+- `extraction_runs` — invoice_id, raw_response, error, model, prompt_version, latency_ms, input/output tokens, cost_usd (column exists but is **not computed yet**; planned for Phase 5)
 - `field_flags` — invoice_id, field_path (e.g. `line_items[2].unit_price`), reason, severity, resolved
 - `corrections` — invoice_id, field_path, old_value, new_value, corrected_by, created_at
 
