@@ -1,0 +1,58 @@
+{
+  "id": "pt-04",
+  "file": "files/20210215_162447.jpg",
+  "source": {
+    "dataset": "zenodo:7213544",
+    "title": "Dataset of personal invoices and receipts including annotation of relevant fields",
+    "url": "https://zenodo.org/records/7213544",
+    "license": "CC BY 4.0",
+    "original_file": "1_Images/20210215_162447.jpg",
+    "sha256": "22e5f7f379912fe790448af5edd3f7881302ea686c34a3da037bb8592fefa554"
+  },
+  "as_of": "2020-12-01",
+  "description": "Dot-matrix receipt, 'Precos com IVA', single tax base line",
+  "labeled_fields": "all",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "FR F600 20/550",
+    "invoice_date": "2020-11-24",
+    "due_date": null,
+    "vendor": {
+      "name": "Monteiro & Abreu, Lda",
+      "address": "Rua Quinta da Portela LT 5.3, 3030-481 Coimbra",
+      "tax_id": "513996613"
+    },
+    "bill_to_name": null,
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "ALMOFADA 50X30 COM VIVO E ENCHIMENTO",
+        "quantity": "1.000",
+        "unit_price": "15.950",
+        "amount": "15.95"
+      },
+      {
+        "description": "TECIDO VARADERO",
+        "quantity": "1.000",
+        "unit_price": "12.050",
+        "amount": "12.05"
+      }
+    ],
+    "subtotal": null,
+    "tax": "5.23",
+    "discount": null,
+    "total": "28.00",
+    "prices_include_tax": true
+  },
+  "alternatives": {
+    "vendor.name": [
+      "Decor Home Styling"
+    ]
+  },
+  "expected_flags": [],
+  "check_false_positives": [],
+  "notes": "",
+  "verified_by": "Vidit",
+  "verified_at": "2026-11-10T06:05:06Z"
+}

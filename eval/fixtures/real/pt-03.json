@@ -1,0 +1,65 @@
+{
+  "id": "pt-03",
+  "file": "files/20210213_140607.jpg",
+  "source": {
+    "dataset": "zenodo:7213544",
+    "title": "Dataset of personal invoices and receipts including annotation of relevant fields",
+    "url": "https://zenodo.org/records/7213544",
+    "license": "CC BY 4.0",
+    "original_file": "1_Images/20210213_140607.jpg",
+    "sha256": "43458c732b359d097b2107de1f11fedf80e31cdaca449bb7bcd16344ed806b78"
+  },
+  "as_of": "2020-11-27",
+  "description": "Bakery 'Fatura/Recibo', 13% + 23% VAT, net + tax breakdown",
+  "labeled_fields": "all",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "92 A /2019329679",
+    "invoice_date": "2020-11-20",
+    "due_date": null,
+    "vendor": {
+      "name": "Moinho Velho",
+      "address": "Av. Dr. Jorge Anjinho, Lote 7/8, 3030-482 COIMBRA",
+      "tax_id": "506 668 720"
+    },
+    "bill_to_name": null,
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "Sopa de Carne /Peixe",
+        "quantity": "1",
+        "unit_price": "2.900",
+        "amount": "2.900"
+      },
+      {
+        "description": "Miniaturas 18/KG.",
+        "quantity": "0.180",
+        "unit_price": "18.000",
+        "amount": "3.240"
+      }
+    ],
+    "subtotal": null,
+    "tax": "0.94",
+    "discount": null,
+    "total": "6.14",
+    "prices_include_tax": true
+  },
+  "alternatives": {
+    "vendor.name": [
+      "Moinho Velho do Mondego, Lda.",
+      "Moinho Velho Padaria"
+    ],
+    "subtotal": [
+      "5.20"
+    ],
+    "prices_include_tax": [
+      false
+    ]
+  },
+  "expected_flags": [],
+  "check_false_positives": [],
+  "notes": "AMBIGUOUS: line prices are gross (sum to 6.14), but it also prints 'Valor Liquido 5,20' + 'Total de Imposto 0,94' = 6,14. Both (true, subtotal null) and (false, subtotal 5.20) are self-consistent readings.",
+  "verified_by": "Vidit",
+  "verified_at": "2026-11-10T06:03:55Z"
+}

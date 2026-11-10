@@ -1,0 +1,61 @@
+{
+  "id": "pt-08",
+  "file": "files/20210316_211331.jpg",
+  "source": {
+    "dataset": "zenodo:7213544",
+    "title": "Dataset of personal invoices and receipts including annotation of relevant fields",
+    "url": "https://zenodo.org/records/7213544",
+    "license": "CC BY 4.0",
+    "original_file": "1_Images/20210316_211331.jpg",
+    "sha256": "7551336b821685203bf849b2bde68baaaec8ab133ec0f423d69eabb31ab8a9a0"
+  },
+  "as_of": "2021-03-12",
+  "description": "Restaurant receipt, 13% VAT included but no tax amount printed",
+  "labeled_fields": "all",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "FS 2/89013",
+    "invoice_date": "2021-03-05",
+    "due_date": null,
+    "vendor": {
+      "name": "Eurotropico Actividades Hoteleiras, Lda.",
+      "address": "Rua Antonio Jose de Almeida, 277, 3000-045 Coimbra",
+      "tax_id": "503156221"
+    },
+    "bill_to_name": null,
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "Massa Eurotropico",
+        "quantity": "1.0",
+        "unit_price": "6.50",
+        "amount": "6.50"
+      },
+      {
+        "description": "Pizza Tropical",
+        "quantity": "1.0",
+        "unit_price": "6.00",
+        "amount": "6.00"
+      }
+    ],
+    "subtotal": null,
+    "tax": null,
+    "discount": null,
+    "total": "12.50",
+    "prices_include_tax": true
+  },
+  "alternatives": {
+    "vendor.name": [
+      "Eurotropico Pizzaria"
+    ],
+    "bill_to_name": [
+      "Consumidor final"
+    ]
+  },
+  "expected_flags": [],
+  "check_false_positives": [],
+  "notes": "Only the rate (13%) is printed, not the tax amount: tax must be null, not computed.",
+  "verified_by": "Vidit",
+  "verified_at": "2026-11-10T06:15:24Z"
+}

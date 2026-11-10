@@ -1,0 +1,123 @@
+{
+  "id": "pt-07",
+  "file": "files/20210215_163914.jpg",
+  "source": {
+    "dataset": "zenodo:7213544",
+    "title": "Dataset of personal invoices and receipts including annotation of relevant fields",
+    "url": "https://zenodo.org/records/7213544",
+    "license": "CC BY 4.0",
+    "original_file": "1_Images/20210215_163914.jpg",
+    "sha256": "5879a716b9c0f86149295a5c695a02e5ef9745e6d9acd7aa5e18f8e169439500"
+  },
+  "as_of": "2020-11-24",
+  "description": "Department-store receipt, 8 items, two VAT rates, unit prices not printed, faint header",
+  "labeled_fields": "all",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "FC 015520001A/016428",
+    "invoice_date": "2020-11-17",
+    "due_date": null,
+    "vendor": {
+      "name": "El Corte Inglés - Grandes Armazéns, S. A.",
+      "address": "Avenida António Augusto de Aguiar, 31, 1069-413 Lisboa (Portugal)",
+      "tax_id": "501810285"
+    },
+    "bill_to_name": null,
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "BATATA CHEF G",
+        "quantity": "1",
+        "unit_price": null,
+        "amount": "2.79"
+      },
+      {
+        "description": "SACOS T-SHIRT 55MICR",
+        "quantity": "1",
+        "unit_price": null,
+        "amount": "0.15"
+      },
+      {
+        "description": "FRUTARIA",
+        "quantity": "1",
+        "unit_price": null,
+        "amount": "2.84"
+      },
+      {
+        "description": "BOLO REI",
+        "quantity": "1",
+        "unit_price": null,
+        "amount": "6.79"
+      },
+      {
+        "description": "BAGUETE NUTRIVA",
+        "quantity": "1",
+        "unit_price": null,
+        "amount": "0.49"
+      },
+      {
+        "description": "CEREAIS ESTR.",
+        "quantity": "1",
+        "unit_price": null,
+        "amount": "3.79"
+      },
+      {
+        "description": "MINI TOSTAS",
+        "quantity": "1",
+        "unit_price": null,
+        "amount": "1.44"
+      },
+      {
+        "description": "BATATA FRITA",
+        "quantity": "1",
+        "unit_price": null,
+        "amount": "2.02"
+      }
+    ],
+    "subtotal": null,
+    "tax": "3.18",
+    "discount": null,
+    "total": "20.31",
+    "prices_include_tax": true
+  },
+  "alternatives": {
+    "vendor.name": [
+      "El Corte Inglés"
+    ],
+    "vendor.address": [
+      "R MON NUNES PEREIRA, COIMBRA",
+      "SUPERCOR COIMBRA, R MON NUNES PEREIRA, COIMBRA",
+      null
+    ],
+    "line_items[0].unit_price": [
+      "2.79"
+    ],
+    "line_items[1].unit_price": [
+      "0.15"
+    ],
+    "line_items[2].unit_price": [
+      "2.84"
+    ],
+    "line_items[3].unit_price": [
+      "6.79"
+    ],
+    "line_items[4].unit_price": [
+      "0.49"
+    ],
+    "line_items[5].unit_price": [
+      "3.79"
+    ],
+    "line_items[6].unit_price": [
+      "1.44"
+    ],
+    "line_items[7].unit_price": [
+      "2.02"
+    ]
+  },
+  "expected_flags": [],
+  "check_false_positives": [],
+  "notes": "Head-office address in the header is very faint; store address (or null) accepted too. Unit price isn't printed (qty 1), so null or the line amount are both fine. 'C'/'A' after qty are tax classes, not units. tax = 0.27 + 2.91.",
+  "verified_by": "Vidit",
+  "verified_at": "2026-11-10T06:14:24Z"
+}

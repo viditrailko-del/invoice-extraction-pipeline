@@ -1,0 +1,61 @@
+{
+  "id": "pt-06",
+  "file": "files/20210509_000443.jpg",
+  "source": {
+    "dataset": "zenodo:7213544",
+    "title": "Dataset of personal invoices and receipts including annotation of relevant fields",
+    "url": "https://zenodo.org/records/7213544",
+    "license": "CC BY 4.0",
+    "original_file": "1_Images/20210509_000443.jpg",
+    "sha256": "55dbb3909ea199d092983a1b8f64d79a5aebeedcd2845363d90392dbe576b76f"
+  },
+  "as_of": "2021-04-13",
+  "description": "Hardware shop 'FATURA' with NET prices and tax ADDED (Portugal, but not tax-included)",
+  "labeled_fields": "all",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "FT VT211/1039",
+    "invoice_date": "2021-04-06",
+    "due_date": null,
+    "vendor": {
+      "name": "José Borbigão Machado",
+      "address": "Rua do Brasil, 306-308",
+      "tax_id": "112983600"
+    },
+    "bill_to_name": null,
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "LIMPA METAIS CORAÇAO Nº 1",
+        "quantity": "2.00",
+        "unit_price": "3.537",
+        "amount": "7.07"
+      },
+      {
+        "description": "LIMPA METAIS CORAÇAO Nº 2",
+        "quantity": "1.00",
+        "unit_price": "4.800",
+        "amount": "4.80"
+      }
+    ],
+    "subtotal": null,
+    "tax": "2.73",
+    "discount": null,
+    "total": "14.60",
+    "prices_include_tax": false
+  },
+  "alternatives": {
+    "subtotal": [
+      "11.87"
+    ],
+    "bill_to_name": [
+      "Consumidor final"
+    ]
+  },
+  "expected_flags": [],
+  "check_false_positives": [],
+  "notes": "Same country as the others, opposite convention: lines are net (sum 11.87 = Incidencia), + IVA 2.73 = 14.60. Review: reviewer first set prices_include_tax=true; kept false after checking that lines sum to the printed Incidencia (11,87) and IVA is added to reach 14,60.",
+  "verified_by": "Vidit",
+  "verified_at": "2026-11-10T06:09:25Z"
+}

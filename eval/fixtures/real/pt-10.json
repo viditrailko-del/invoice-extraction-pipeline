@@ -1,0 +1,116 @@
+{
+  "id": "pt-10",
+  "file": "files/20210217_033607.jpg",
+  "source": {
+    "dataset": "zenodo:7213544",
+    "title": "Dataset of personal invoices and receipts including annotation of relevant fields",
+    "url": "https://zenodo.org/records/7213544",
+    "license": "CC BY 4.0",
+    "original_file": "1_Images/20210217_033607.jpg",
+    "sha256": "f42c2c44487c208d749e6e9f6acbadf84cbadaf4118037c1adf87273157a91c3"
+  },
+  "as_of": "2021-01-21",
+  "description": "Butcher receipt, 11 weighed items, 6% + 23% VAT",
+  "labeled_fields": "all",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "B/158",
+    "invoice_date": "2021-01-14",
+    "due_date": null,
+    "vendor": {
+      "name": "TOZELI-COMERCIO DE CARNES LDA",
+      "address": "RUA CARLOS SEIXAS,127-A 3030-177 COIMBRA",
+      "tax_id": "506 390 276"
+    },
+    "bill_to_name": null,
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "CHISPE",
+        "quantity": "1.450",
+        "unit_price": "2.90",
+        "amount": "4.21"
+      },
+      {
+        "description": "ENTRECOSTO",
+        "quantity": "1.030",
+        "unit_price": "6.95",
+        "amount": "7.16"
+      },
+      {
+        "description": "ORELHA",
+        "quantity": "0.290",
+        "unit_price": "5.95",
+        "amount": "1.73"
+      },
+      {
+        "description": "FRANGO DO CAMPO",
+        "quantity": "3.235",
+        "unit_price": "4.55",
+        "amount": "14.72"
+      },
+      {
+        "description": "PICANHA",
+        "quantity": "3.005",
+        "unit_price": "14.90",
+        "amount": "44.77"
+      },
+      {
+        "description": "MAMINHA ALCATRA",
+        "quantity": "1.685",
+        "unit_price": "14.90",
+        "amount": "25.11"
+      },
+      {
+        "description": "ALHEIRA TERESINHA",
+        "quantity": "0.980",
+        "unit_price": "8.59",
+        "amount": "8.42"
+      },
+      {
+        "description": "CHOURIÇO,EXTRA",
+        "quantity": "0.320",
+        "unit_price": "13.20",
+        "amount": "4.22"
+      },
+      {
+        "description": "MOELAS FRANGO",
+        "quantity": "0.580",
+        "unit_price": "3.25",
+        "amount": "1.89"
+      },
+      {
+        "description": "FIGADO BOVINO",
+        "quantity": "0.565",
+        "unit_price": "7.90",
+        "amount": "4.46"
+      },
+      {
+        "description": "LOMBELO LIMPO",
+        "quantity": "0.940",
+        "unit_price": "8.90",
+        "amount": "8.37"
+      }
+    ],
+    "subtotal": null,
+    "tax": "8.72",
+    "discount": null,
+    "total": "125.06",
+    "prices_include_tax": true
+  },
+  "alternatives": {
+    "invoice_number": [
+      "Nº B/158",
+      "1 B/158"
+    ],
+    "bill_to_name": [
+      "Consumidor final"
+    ]
+  },
+  "expected_flags": [],
+  "check_false_positives": [],
+  "notes": "tax = 6.36 (6%) + 2.36 (23%).",
+  "verified_by": "Vidit",
+  "verified_at": "2026-11-10T06:18:56Z"
+}

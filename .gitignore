@@ -6,3 +6,6 @@ __pycache__/
 storage/*
 !storage/.gitkeep
 CLAUDE.local.md
+
+# Real eval images: fetched from Zenodo by scripts/fetch_real_fixtures.py, never committed
+eval/fixtures/real/files/

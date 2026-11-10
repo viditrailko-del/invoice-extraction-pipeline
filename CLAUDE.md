@@ -109,6 +109,12 @@ tests/
 - Dates in synthetic invoices use day > 12, so day/month order is never ambiguous.
 - `tests/test_fixtures.py` validates every fixture. If you change a check or the schema, regenerate the fixtures.
 - Discount `expected` keeps the printed sign (`-107.48` if printed negative); the eval should compare discount by absolute value.
+- **Real fixtures** (`eval/fixtures/real/pt-01..10.json`): 10 Portuguese receipts, full labels (line items included), each human-verified (`verified_by`). Images are not in git: run `python -m scripts.fetch_real_fixtures` (downloads from Zenodo once, verifies md5 + per-image sha256).
+  - Real-fixture semantics: `expected_flags` is `[]` (the documents are correct). `check_false_positives` records what our checks wrongly raise on the TRUE data; it's asserted, so it stays visible. Currently only pt-05 (a line-level discount breaks `line_math` and `subtotal_mismatch`).
+  - `alternatives` = other acceptable answers per field path (trading vs legal name, "Consumidor final", ambiguous readings). Phase 5 must accept them.
+  - `as_of` = invoice date + 7 days, so old receipts don't trigger the 2-year warning.
+  - Labeling workflow: draft from the photo (never from LLM output), cross-check with the dataset labels and with the receipt's own arithmetic, then human review with `python -m scripts.prepare_label_review` (page served by `.claude/launch.json` "label-review"). The dataset's own labels get tax wrong on every multi-rate receipt (they record only one rate), and a smudged digit fooled three readers on pt-02. Settle disputes with arithmetic.
+  - Don't put private individuals' data in labels (a dental receipt with a patient's name was dropped).
 - Real invoices: Zenodo 7213544 (CC BY 4.0, attribution required) is downloaded and checksum-verified in gitignored `storage/datasets/zenodo-7213544/`. It has 190 phone photos of Portuguese till receipts (tax included). Its labels cover header fields only, as printed (6 date formats, `12,20` vs `9.98`, lowercase). Most receipts show a private buyer NIF (`121653897`), so **don't commit the images**: commit our checked label JSON plus a fetch script. Hand-label from the document, not from LLM output.
 - Other candidates: katanaml invoices-donut-data-v1 (MIT, likely synthetic), RealKIE FCC invoices (real, CC BY-NC), DocILE (token-gated, license unclear). Ask before downloading.
 
@@ -138,7 +144,7 @@ Build in phase order. Don't add queues, auth, S3, or a frontend until the eval h
 
 | Phase | Goal | Status |
 |---|---|---|
-| 0 | Ground-truth fixtures (20–30 labeled invoices) | in progress: 28 synthetic done, real (Zenodo) pending |
+| 0 | Ground-truth fixtures (20–30 labeled invoices) | done (28 synthetic + 10 real, human-verified) |
 | 1 | Skeleton: FastAPI + Postgres + Alembic + upload/get, idempotent hashing | done |
 | 2 | Gemini extraction + Pydantic validation + retry + raw storage | done |
 | 3 | Deterministic checks + flags + status | done |

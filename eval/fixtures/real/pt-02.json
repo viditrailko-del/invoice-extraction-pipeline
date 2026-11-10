@@ -1,0 +1,70 @@
+{
+  "id": "pt-02",
+  "file": "files/20210213_141211.jpg",
+  "source": {
+    "dataset": "zenodo:7213544",
+    "title": "Dataset of personal invoices and receipts including annotation of relevant fields",
+    "url": "https://zenodo.org/records/7213544",
+    "license": "CC BY 4.0",
+    "original_file": "1_Images/20210213_141211.jpg",
+    "sha256": "c6bfd35dcf719298531afdf37c53109885a792330525f4580b6fd5e4d6b47c84"
+  },
+  "as_of": "2020-12-05",
+  "description": "Bakery receipt with two VAT rates (23% + 6%) and a weighed item",
+  "labeled_fields": "all",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "FS B05/181486",
+    "invoice_date": "2020-11-28",
+    "due_date": null,
+    "vendor": {
+      "name": "Nova Gama Gourmet SA",
+      "address": "Bairro Norton de Matos, 56 a 58, 3030-017 Coimbra",
+      "tax_id": "501419926"
+    },
+    "bill_to_name": null,
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "Bolo Rei",
+        "quantity": "0.65",
+        "unit_price": "17.00",
+        "amount": "11.05"
+      },
+      {
+        "description": "Padaria",
+        "quantity": "1",
+        "unit_price": "1.50",
+        "amount": "1.50"
+      },
+      {
+        "description": "Caseiro Pequero",
+        "quantity": "4",
+        "unit_price": "0.30",
+        "amount": "1.20"
+      },
+      {
+        "description": "Broinhas de natal",
+        "quantity": "4",
+        "unit_price": "1.20",
+        "amount": "4.80"
+      }
+    ],
+    "subtotal": null,
+    "tax": "3.11",
+    "discount": null,
+    "total": "18.55",
+    "prices_include_tax": true
+  },
+  "alternatives": {
+    "invoice_number": [
+      "FS 805/181486"
+    ]
+  },
+  "expected_flags": [],
+  "check_false_positives": [],
+  "notes": "'Pequero' is a typo on the receipt itself (Pequeno); labeled as printed. tax = 2.96 (23%) + 0.15 (6%) = 3.11. The 23% IVA digit is smudged and looks like '2,56', but the row's own arithmetic fixes it: base 12,89 + IVA = 15,85 -> 2,96 (15,85 / 1.23 = 12,89). Review: dataset said 0.15, first draft 2.71, reviewer 2.70 (the 6% row's Valor Total); settled on 3.11 by arithmetic.",
+  "verified_by": "Vidit",
+  "verified_at": "2026-11-10T06:01:58Z"
+}

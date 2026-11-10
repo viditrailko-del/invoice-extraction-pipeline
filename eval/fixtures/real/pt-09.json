@@ -1,0 +1,58 @@
+{
+  "id": "pt-09",
+  "file": "files/20210509_001021.jpg",
+  "source": {
+    "dataset": "zenodo:7213544",
+    "title": "Dataset of personal invoices and receipts including annotation of relevant fields",
+    "url": "https://zenodo.org/records/7213544",
+    "license": "CC BY 4.0",
+    "original_file": "1_Images/20210509_001021.jpg",
+    "sha256": "ac7fccf22795d1af37f04126f44b740a5b5176e4c20e181f1b6d9cdfc73485f7"
+  },
+  "as_of": "2021-05-05",
+  "description": "Badly faded thermal print, single item",
+  "labeled_fields": "all",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "FS SI/19464",
+    "invoice_date": "2021-04-28",
+    "due_date": null,
+    "vendor": {
+      "name": "Marques e Mascarenhas, Unip. Lda",
+      "address": "C. C. CoimbraShopping, Loja 238, 3030-193 Coimbra",
+      "tax_id": "503392430"
+    },
+    "bill_to_name": null,
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "LENCO",
+        "quantity": "1",
+        "unit_price": "15.90",
+        "amount": "15.90"
+      }
+    ],
+    "subtotal": null,
+    "tax": "2.97",
+    "discount": null,
+    "total": "15.90",
+    "prices_include_tax": true
+  },
+  "alternatives": {
+    "vendor.name": [
+      "Sisters"
+    ],
+    "line_items[0].description": [
+      "LENCO Ref:20E.010 Cor:UNICO Tamanho:TU"
+    ],
+    "bill_to_name": [
+      "Consumidor final"
+    ]
+  },
+  "expected_flags": [],
+  "check_false_positives": [],
+  "notes": "",
+  "verified_by": "Vidit",
+  "verified_at": "2026-11-10T06:16:52Z"
+}
