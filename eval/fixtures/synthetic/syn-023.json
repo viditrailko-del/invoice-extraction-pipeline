@@ -1,0 +1,67 @@
+{
+  "id": "syn-023",
+  "file": "syn-023.jpg",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "scanned, wrong total",
+  "layout": "band",
+  "planted": [
+    "total_mismatch"
+  ],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "SSS/26-27/4705",
+    "invoice_date": "2026-08-31",
+    "due_date": "2026-09-14",
+    "vendor": {
+      "name": "Sahyadri Software Solutions Pvt Ltd",
+      "address": "Plot 22, Hinjewadi Phase 2, Pune 411057, Maharashtra, India",
+      "tax_id": "27AABCS1429B1Z5"
+    },
+    "bill_to_name": "Orion Health Partners",
+    "currency": "INR",
+    "line_items": [
+      {
+        "description": "Developer hours",
+        "quantity": "77",
+        "unit_price": "2400.00",
+        "amount": "184800.00"
+      },
+      {
+        "description": "Cloud migration services",
+        "quantity": "1",
+        "unit_price": "130000.00",
+        "amount": "130000.00"
+      },
+      {
+        "description": "Developer hours",
+        "quantity": "31",
+        "unit_price": "2100.00",
+        "amount": "65100.00"
+      },
+      {
+        "description": "Annual maintenance contract",
+        "quantity": "1",
+        "unit_price": "94100.00",
+        "amount": "94100.00"
+      },
+      {
+        "description": "Training session",
+        "quantity": "2",
+        "unit_price": "30800.00",
+        "amount": "61600.00"
+      }
+    ],
+    "subtotal": "535600.00",
+    "tax": "96408.00",
+    "discount": null,
+    "total": "632001.00",
+    "prices_include_tax": false
+  },
+  "expected_flags": [
+    {
+      "code": "total_mismatch",
+      "field_path": "total"
+    }
+  ]
+}

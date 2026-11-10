@@ -1,0 +1,55 @@
+{
+  "id": "syn-019",
+  "file": "syn-019.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "printed total wrong",
+  "layout": "minimal",
+  "planted": [
+    "total_mismatch"
+  ],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "RE-202607083",
+    "invoice_date": "2026-10-18",
+    "due_date": "2026-11-13",
+    "vendor": {
+      "name": "Kessler Maschinenbau GmbH",
+      "address": "Industriestraße 14, 70565 Stuttgart, Deutschland",
+      "tax_id": "DE287451903"
+    },
+    "bill_to_name": "Fjordline Retail AS",
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "Hydraulikzylinder HZ-40",
+        "quantity": "1",
+        "unit_price": "223.99",
+        "amount": "223.99"
+      },
+      {
+        "description": "Kugellager 6204-2RS",
+        "quantity": "26",
+        "unit_price": "6.29",
+        "amount": "163.54"
+      },
+      {
+        "description": "Dichtungssatz",
+        "quantity": "13",
+        "unit_price": "10.43",
+        "amount": "135.59"
+      }
+    ],
+    "subtotal": "523.12",
+    "tax": "99.39",
+    "discount": null,
+    "total": "615.51",
+    "prices_include_tax": false
+  },
+  "expected_flags": [
+    {
+      "code": "total_mismatch",
+      "field_path": "total"
+    }
+  ]
+}

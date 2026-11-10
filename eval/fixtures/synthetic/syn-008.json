@@ -1,0 +1,42 @@
+{
+  "id": "syn-008",
+  "file": "syn-008.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "NOK, space thousands separator",
+  "layout": "band",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "05800",
+    "invoice_date": "2026-09-25",
+    "due_date": "2026-10-13",
+    "vendor": {
+      "name": "Nordlys Data AS",
+      "address": "Karl Johans gate 5, 0154 Oslo, Norway",
+      "tax_id": "NO987654321MVA"
+    },
+    "bill_to_name": "Bluewater Retail Group",
+    "currency": "NOK",
+    "line_items": [
+      {
+        "description": "Analytics seats",
+        "quantity": "7",
+        "unit_price": "446.88",
+        "amount": "3128.16"
+      },
+      {
+        "description": "Onboarding",
+        "quantity": "1",
+        "unit_price": "8400.00",
+        "amount": "8400.00"
+      }
+    ],
+    "subtotal": "11528.16",
+    "tax": "2882.04",
+    "discount": null,
+    "total": "14410.20",
+    "prices_include_tax": false
+  },
+  "expected_flags": []
+}

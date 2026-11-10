@@ -1,0 +1,54 @@
+{
+  "id": "syn-003",
+  "file": "syn-003.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "German labels, 1.234,56 numbers, dd.mm.yyyy",
+  "layout": "classic",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "RE-202606028",
+    "invoice_date": "2026-07-30",
+    "due_date": "2026-08-20",
+    "vendor": {
+      "name": "Kessler Maschinenbau GmbH",
+      "address": "Industriestraße 14, 70565 Stuttgart, Deutschland",
+      "tax_id": "DE287451903"
+    },
+    "bill_to_name": "Rivière Bleue Événements",
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "Kugellager 6204-2RS",
+        "quantity": "36",
+        "unit_price": "3.98",
+        "amount": "143.28"
+      },
+      {
+        "description": "Dichtungssatz",
+        "quantity": "6",
+        "unit_price": "22.46",
+        "amount": "134.76"
+      },
+      {
+        "description": "Frachtkosten",
+        "quantity": "1",
+        "unit_price": "114.42",
+        "amount": "114.42"
+      },
+      {
+        "description": "Frachtkosten",
+        "quantity": "1",
+        "unit_price": "117.29",
+        "amount": "117.29"
+      }
+    ],
+    "subtotal": "509.75",
+    "tax": "96.85",
+    "discount": null,
+    "total": "606.60",
+    "prices_include_tax": false
+  },
+  "expected_flags": []
+}

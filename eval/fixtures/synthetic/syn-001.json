@@ -1,0 +1,48 @@
+{
+  "id": "syn-001",
+  "file": "syn-001.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "baseline UK invoice",
+  "layout": "classic",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "NW-2026-3800",
+    "invoice_date": "2026-10-31",
+    "due_date": "2026-11-14",
+    "vendor": {
+      "name": "Northwind Cloud Services Ltd.",
+      "address": "12 Harbour Street, Bristol BS1 4XY, United Kingdom",
+      "tax_id": "GB123456789"
+    },
+    "bill_to_name": "Pacific Rim Traders",
+    "currency": "GBP",
+    "line_items": [
+      {
+        "description": "Database instance db.m5",
+        "quantity": "1",
+        "unit_price": "246.03",
+        "amount": "246.03"
+      },
+      {
+        "description": "Domain renewal",
+        "quantity": "5",
+        "unit_price": "14.99",
+        "amount": "74.95"
+      },
+      {
+        "description": "Support hours",
+        "quantity": "9.5",
+        "unit_price": "111.26",
+        "amount": "1056.97"
+      }
+    ],
+    "subtotal": "1377.95",
+    "tax": "275.59",
+    "discount": null,
+    "total": "1653.54",
+    "prices_include_tax": false
+  },
+  "expected_flags": []
+}

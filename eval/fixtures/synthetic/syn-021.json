@@ -1,0 +1,55 @@
+{
+  "id": "syn-021",
+  "file": "syn-021.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "invoice dated 3 years ago",
+  "layout": "band",
+  "planted": [
+    "date_implausible"
+  ],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "MLL-01917",
+    "invoice_date": "2023-07-29",
+    "due_date": "2023-08-28",
+    "vendor": {
+      "name": "Maple Leaf Logistics Inc.",
+      "address": "220 King St W, Toronto, ON M5H 1K4, Canada",
+      "tax_id": "123456789RT0001"
+    },
+    "bill_to_name": "Müller & Söhne KG",
+    "currency": "CAD",
+    "line_items": [
+      {
+        "description": "Fuel surcharge",
+        "quantity": "1",
+        "unit_price": "154.54",
+        "amount": "154.54"
+      },
+      {
+        "description": "Fuel surcharge",
+        "quantity": "1",
+        "unit_price": "111.23",
+        "amount": "111.23"
+      },
+      {
+        "description": "FTL Toronto-Montreal",
+        "quantity": "2",
+        "unit_price": "1400.00",
+        "amount": "2800.00"
+      }
+    ],
+    "subtotal": "3065.77",
+    "tax": "398.55",
+    "discount": null,
+    "total": "3464.32",
+    "prices_include_tax": false
+  },
+  "expected_flags": [
+    {
+      "code": "date_implausible",
+      "field_path": "invoice_date"
+    }
+  ]
+}

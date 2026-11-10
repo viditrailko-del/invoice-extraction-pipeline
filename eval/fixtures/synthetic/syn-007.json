@@ -1,0 +1,48 @@
+{
+  "id": "syn-007",
+  "file": "syn-007.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "no tax, no tax id, long date format",
+  "layout": "minimal",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "HP-2026-4901",
+    "invoice_date": "2026-10-22",
+    "due_date": "2026-11-21",
+    "vendor": {
+      "name": "Harbor & Pine Consulting",
+      "address": "77 Pine Avenue, Portland, OR 97204, USA",
+      "tax_id": null
+    },
+    "bill_to_name": "Greenfield Schools Trust",
+    "currency": "USD",
+    "line_items": [
+      {
+        "description": "Travel expenses",
+        "quantity": "1",
+        "unit_price": "245.36",
+        "amount": "245.36"
+      },
+      {
+        "description": "Travel expenses",
+        "quantity": "1",
+        "unit_price": "251.65",
+        "amount": "251.65"
+      },
+      {
+        "description": "Strategy consulting (hours)",
+        "quantity": "29",
+        "unit_price": "180.29",
+        "amount": "5228.41"
+      }
+    ],
+    "subtotal": "5725.42",
+    "tax": null,
+    "discount": null,
+    "total": "5725.42",
+    "prices_include_tax": null
+  },
+  "expected_flags": []
+}

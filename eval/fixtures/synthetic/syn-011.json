@@ -1,0 +1,60 @@
+{
+  "id": "syn-011",
+  "file": "syn-011.jpg",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "scanned German invoice",
+  "layout": "band",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "RE-202607710",
+    "invoice_date": "2026-08-31",
+    "due_date": "2026-09-21",
+    "vendor": {
+      "name": "Kessler Maschinenbau GmbH",
+      "address": "Industriestraße 14, 70565 Stuttgart, Deutschland",
+      "tax_id": "DE287451903"
+    },
+    "bill_to_name": "Acme Analytics Pvt Ltd",
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "Montage (Std.)",
+        "quantity": "9.5",
+        "unit_price": "71.63",
+        "amount": "680.49"
+      },
+      {
+        "description": "Hydraulikzylinder HZ-40",
+        "quantity": "3",
+        "unit_price": "218.49",
+        "amount": "655.47"
+      },
+      {
+        "description": "Kugellager 6204-2RS",
+        "quantity": "29",
+        "unit_price": "6.67",
+        "amount": "193.43"
+      },
+      {
+        "description": "Kugellager 6204-2RS",
+        "quantity": "17",
+        "unit_price": "5.76",
+        "amount": "97.92"
+      },
+      {
+        "description": "Montage (Std.)",
+        "quantity": "11.5",
+        "unit_price": "68.32",
+        "amount": "785.68"
+      }
+    ],
+    "subtotal": "2412.99",
+    "tax": "458.47",
+    "discount": null,
+    "total": "2871.46",
+    "prices_include_tax": false
+  },
+  "expected_flags": []
+}

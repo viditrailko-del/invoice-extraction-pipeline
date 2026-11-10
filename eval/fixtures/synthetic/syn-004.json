@@ -1,0 +1,66 @@
+{
+  "id": "syn-004",
+  "file": "syn-004.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "Indian lakh grouping, vendor only in footer",
+  "layout": "minimal",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "SSS/26-27/4080",
+    "invoice_date": "2026-07-15",
+    "due_date": "2026-07-29",
+    "vendor": {
+      "name": "Sahyadri Software Solutions Pvt Ltd",
+      "address": "Plot 22, Hinjewadi Phase 2, Pune 411057, Maharashtra, India",
+      "tax_id": "27AABCS1429B1Z5"
+    },
+    "bill_to_name": "Greenfield Schools Trust",
+    "currency": "INR",
+    "line_items": [
+      {
+        "description": "Developer hours",
+        "quantity": "30",
+        "unit_price": "2400.00",
+        "amount": "72000.00"
+      },
+      {
+        "description": "Developer hours",
+        "quantity": "79",
+        "unit_price": "1900.00",
+        "amount": "150100.00"
+      },
+      {
+        "description": "Cloud migration services",
+        "quantity": "1",
+        "unit_price": "65600.00",
+        "amount": "65600.00"
+      },
+      {
+        "description": "Training session",
+        "quantity": "1",
+        "unit_price": "19800.00",
+        "amount": "19800.00"
+      },
+      {
+        "description": "Developer hours",
+        "quantity": "53",
+        "unit_price": "2500.00",
+        "amount": "132500.00"
+      },
+      {
+        "description": "Cloud migration services",
+        "quantity": "1",
+        "unit_price": "50700.00",
+        "amount": "50700.00"
+      }
+    ],
+    "subtotal": "490700.00",
+    "tax": "88326.00",
+    "discount": null,
+    "total": "579026.00",
+    "prices_include_tax": false
+  },
+  "expected_flags": []
+}

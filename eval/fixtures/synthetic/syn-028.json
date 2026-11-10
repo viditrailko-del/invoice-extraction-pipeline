@@ -1,0 +1,55 @@
+{
+  "id": "syn-028",
+  "file": "syn-028.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "TVA included, but added to the total again",
+  "layout": "classic",
+  "planted": [
+    "total_mismatch"
+  ],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "F2026/9241",
+    "invoice_date": "2026-08-26",
+    "due_date": "2026-10-13",
+    "vendor": {
+      "name": "Atelier Lumière SARL",
+      "address": "8 Rue des Lilas, 69003 Lyon, France",
+      "tax_id": "FR40303265045"
+    },
+    "bill_to_name": "Pacific Rim Traders",
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "Impression affiches A2",
+        "quantity": "190",
+        "unit_price": "3.09",
+        "amount": "587.10"
+      },
+      {
+        "description": "Séance photo (demi-journée)",
+        "quantity": "2",
+        "unit_price": "560.75",
+        "amount": "1121.50"
+      },
+      {
+        "description": "Séance photo (demi-journée)",
+        "quantity": "1",
+        "unit_price": "454.10",
+        "amount": "454.10"
+      }
+    ],
+    "subtotal": null,
+    "tax": "360.45",
+    "discount": null,
+    "total": "2523.15",
+    "prices_include_tax": true
+  },
+  "expected_flags": [
+    {
+      "code": "total_mismatch",
+      "field_path": "total"
+    }
+  ]
+}

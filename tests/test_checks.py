@@ -36,6 +36,7 @@ def inv(**overrides) -> ExtractedInvoice:
         "tax": "3.65",
         "discount": None,
         "total": "40.15",
+        "prices_include_tax": False,
     }
     data.update(overrides)
     return ExtractedInvoice.model_validate(data)
@@ -162,6 +163,48 @@ def test_total_with_negative_printed_discount():
 def test_total_without_tax_or_subtotal_uses_line_sum():
     assert check_total(inv(subtotal=None, tax=None, total="36.50")) == []
     assert paths(check_total(inv(subtotal=None, tax=None, total="30.00"))) == ["total"]
+
+
+def receipt(**overrides) -> ExtractedInvoice:
+    """Real Portuguese receipt (Zenodo 7213544): 10,00 + 2,20 = Total 12,20, IVA 2,28 included."""
+    data = {
+        "line_items": [{"amount": "10.00"}, {"amount": "2.20"}],
+        "subtotal": None,
+        "tax": "2.28",
+        "total": "12.20",
+        "prices_include_tax": True,
+    }
+    data.update(overrides)
+    return ExtractedInvoice.model_validate(data)
+
+
+def test_tax_included_receipt_ok():
+    assert check_total(receipt()) == []
+
+
+def test_tax_included_receipt_flagged_under_tax_added_rule():
+    # the false alarm we'd raise if we assumed "tax added" everywhere
+    assert paths(check_total(receipt(prices_include_tax=False))) == ["total"]
+
+
+def test_tax_included_but_total_has_tax_added_again():
+    [flag] = check_total(receipt(total="14.48"))  # 12.20 + 2.28
+    assert "tax included" in flag.reason
+
+
+def test_tax_included_with_discount():
+    assert check_total(receipt(discount="1.20", total="11.00")) == []
+
+
+def test_tax_added_catches_subtotal_read_as_total():
+    # classic LLM slip on a tax-added invoice: picks the subtotal line as the total
+    assert paths(check_total(inv(total="36.50"))) == ["total"]
+
+
+def test_unknown_convention_accepts_either_reading():
+    assert check_total(inv(prices_include_tax=None)) == []  # tax added
+    assert check_total(receipt(prices_include_tax=None)) == []  # tax included
+    assert paths(check_total(inv(prices_include_tax=None, total="50.00"))) == ["total"]
 
 
 def test_total_skipped_when_nothing_to_compare():

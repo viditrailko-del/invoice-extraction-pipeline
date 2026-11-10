@@ -1,0 +1,270 @@
+{
+  "id": "syn-009",
+  "file": "syn-009.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "multi-page (2 pages)",
+  "layout": "classic",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "INV002296",
+    "invoice_date": "2026-07-31",
+    "due_date": "2026-08-14",
+    "vendor": {
+      "name": "Brightline Design Studio LLC",
+      "address": "480 Mission Street, Suite 300, San Francisco, CA 94105, USA",
+      "tax_id": "94-3812775"
+    },
+    "bill_to_name": "Greenfield Schools Trust",
+    "currency": "USD",
+    "line_items": [
+      {
+        "description": "Illustration",
+        "quantity": "5",
+        "unit_price": "175.72",
+        "amount": "878.60"
+      },
+      {
+        "description": "Revisions (hours)",
+        "quantity": "9",
+        "unit_price": "75.88",
+        "amount": "682.92"
+      },
+      {
+        "description": "Print-ready files",
+        "quantity": "1",
+        "unit_price": "120.00",
+        "amount": "120.00"
+      },
+      {
+        "description": "Revisions (hours)",
+        "quantity": "4.5",
+        "unit_price": "76.63",
+        "amount": "344.84"
+      },
+      {
+        "description": "Print-ready files",
+        "quantity": "1",
+        "unit_price": "120.00",
+        "amount": "120.00"
+      },
+      {
+        "description": "Revisions (hours)",
+        "quantity": "2",
+        "unit_price": "80.13",
+        "amount": "160.26"
+      },
+      {
+        "description": "Print-ready files",
+        "quantity": "1",
+        "unit_price": "120.00",
+        "amount": "120.00"
+      },
+      {
+        "description": "Illustration",
+        "quantity": "4",
+        "unit_price": "224.03",
+        "amount": "896.12"
+      },
+      {
+        "description": "Illustration",
+        "quantity": "6",
+        "unit_price": "195.65",
+        "amount": "1173.90"
+      },
+      {
+        "description": "Brand identity workshop",
+        "quantity": "1",
+        "unit_price": "1400.00",
+        "amount": "1400.00"
+      },
+      {
+        "description": "Stock photo license",
+        "quantity": "1",
+        "unit_price": "56.16",
+        "amount": "56.16"
+      },
+      {
+        "description": "Revisions (hours)",
+        "quantity": "12",
+        "unit_price": "86.35",
+        "amount": "1036.20"
+      },
+      {
+        "description": "Stock photo license",
+        "quantity": "1",
+        "unit_price": "68.67",
+        "amount": "68.67"
+      },
+      {
+        "description": "Brand identity workshop",
+        "quantity": "1",
+        "unit_price": "1700.00",
+        "amount": "1700.00"
+      },
+      {
+        "description": "Stock photo license",
+        "quantity": "6",
+        "unit_price": "55.09",
+        "amount": "330.54"
+      },
+      {
+        "description": "Stock photo license",
+        "quantity": "2",
+        "unit_price": "66.30",
+        "amount": "132.60"
+      },
+      {
+        "description": "Print-ready files",
+        "quantity": "1",
+        "unit_price": "120.00",
+        "amount": "120.00"
+      },
+      {
+        "description": "Revisions (hours)",
+        "quantity": "10.5",
+        "unit_price": "92.59",
+        "amount": "972.20"
+      },
+      {
+        "description": "Stock photo license",
+        "quantity": "5",
+        "unit_price": "45.07",
+        "amount": "225.35"
+      },
+      {
+        "description": "Brand identity workshop",
+        "quantity": "1",
+        "unit_price": "1900.00",
+        "amount": "1900.00"
+      },
+      {
+        "description": "Revisions (hours)",
+        "quantity": "1",
+        "unit_price": "86.75",
+        "amount": "86.75"
+      },
+      {
+        "description": "Revisions (hours)",
+        "quantity": "10",
+        "unit_price": "75.10",
+        "amount": "751.00"
+      },
+      {
+        "description": "Stock photo license",
+        "quantity": "4",
+        "unit_price": "34.52",
+        "amount": "138.08"
+      },
+      {
+        "description": "Stock photo license",
+        "quantity": "8",
+        "unit_price": "71.79",
+        "amount": "574.32"
+      },
+      {
+        "description": "Revisions (hours)",
+        "quantity": "6.5",
+        "unit_price": "94.50",
+        "amount": "614.25"
+      },
+      {
+        "description": "Print-ready files",
+        "quantity": "1",
+        "unit_price": "120.00",
+        "amount": "120.00"
+      },
+      {
+        "description": "Illustration",
+        "quantity": "3",
+        "unit_price": "349.85",
+        "amount": "1049.55"
+      },
+      {
+        "description": "Revisions (hours)",
+        "quantity": "5.5",
+        "unit_price": "93.69",
+        "amount": "515.30"
+      },
+      {
+        "description": "Print-ready files",
+        "quantity": "1",
+        "unit_price": "120.00",
+        "amount": "120.00"
+      },
+      {
+        "description": "Brand identity workshop",
+        "quantity": "1",
+        "unit_price": "1800.00",
+        "amount": "1800.00"
+      },
+      {
+        "description": "Revisions (hours)",
+        "quantity": "10.5",
+        "unit_price": "84.48",
+        "amount": "887.04"
+      },
+      {
+        "description": "Illustration",
+        "quantity": "3",
+        "unit_price": "290.60",
+        "amount": "871.80"
+      },
+      {
+        "description": "Revisions (hours)",
+        "quantity": "10",
+        "unit_price": "80.75",
+        "amount": "807.50"
+      },
+      {
+        "description": "Stock photo license",
+        "quantity": "4",
+        "unit_price": "57.09",
+        "amount": "228.36"
+      },
+      {
+        "description": "Stock photo license",
+        "quantity": "6",
+        "unit_price": "34.30",
+        "amount": "205.80"
+      },
+      {
+        "description": "Illustration",
+        "quantity": "2",
+        "unit_price": "253.43",
+        "amount": "506.86"
+      },
+      {
+        "description": "Illustration",
+        "quantity": "6",
+        "unit_price": "259.16",
+        "amount": "1554.96"
+      },
+      {
+        "description": "Brand identity workshop",
+        "quantity": "1",
+        "unit_price": "2300.00",
+        "amount": "2300.00"
+      },
+      {
+        "description": "Illustration",
+        "quantity": "1",
+        "unit_price": "293.38",
+        "amount": "293.38"
+      },
+      {
+        "description": "Print-ready files",
+        "quantity": "1",
+        "unit_price": "120.00",
+        "amount": "120.00"
+      }
+    ],
+    "subtotal": "25983.31",
+    "tax": "2273.54",
+    "discount": null,
+    "total": "28256.85",
+    "prices_include_tax": false
+  },
+  "expected_flags": []
+}

@@ -1,0 +1,54 @@
+{
+  "id": "syn-005",
+  "file": "syn-005.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "French labels, discount printed negative",
+  "layout": "band",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "F2026/8592",
+    "invoice_date": "2026-07-31",
+    "due_date": "2026-08-30",
+    "vendor": {
+      "name": "Atelier Lumière SARL",
+      "address": "8 Rue des Lilas, 69003 Lyon, France",
+      "tax_id": "FR40303265045"
+    },
+    "bill_to_name": "Acme Analytics Pvt Ltd",
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "Impression affiches A2",
+        "quantity": "51",
+        "unit_price": "2.79",
+        "amount": "142.29"
+      },
+      {
+        "description": "Conception graphique",
+        "quantity": "3",
+        "unit_price": "454.60",
+        "amount": "1363.80"
+      },
+      {
+        "description": "Impression affiches A2",
+        "quantity": "144",
+        "unit_price": "3.35",
+        "amount": "482.40"
+      },
+      {
+        "description": "Frais de déplacement",
+        "quantity": "1",
+        "unit_price": "161.06",
+        "amount": "161.06"
+      }
+    ],
+    "subtotal": "2149.55",
+    "tax": "408.41",
+    "discount": "-107.48",
+    "total": "2450.48",
+    "prices_include_tax": false
+  },
+  "expected_flags": []
+}

@@ -50,3 +50,15 @@ class ExtractedInvoice(BaseModel):
     tax: Money | None = Field(None, description="Total tax amount, not the rate")
     discount: Money | None = None
     total: Money | None = Field(None, description="Final amount due")
+    # Varies by document type, not just country (US: tax added on top; EU shop
+    # receipts: tax already inside the prices). Read from the document, never assumed:
+    # the total check is strict when this is known and lenient only when it's null.
+    prices_include_tax: bool | None = Field(
+        None,
+        description=(
+            "true if the document says tax is INCLUDED in the prices/total "
+            "(e.g. 'VAT included', 'IVA incluído', 'inkl. MwSt.', 'dont TVA'); "
+            "false if tax is shown as a separate amount ADDED to a subtotal/net amount "
+            "to reach the total; null if no tax is shown or it is unclear"
+        ),
+    )

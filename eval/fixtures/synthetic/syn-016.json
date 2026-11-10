@@ -1,0 +1,111 @@
+{
+  "id": "syn-016",
+  "file": "syn-016.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "credit note: negative quantities and totals",
+  "layout": "classic",
+  "planted": [
+    "negative_amount"
+  ],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "HP-2026-1278",
+    "invoice_date": "2026-09-30",
+    "due_date": "2026-10-14",
+    "vendor": {
+      "name": "Harbor & Pine Consulting",
+      "address": "77 Pine Avenue, Portland, OR 97204, USA",
+      "tax_id": null
+    },
+    "bill_to_name": "Acme Analytics Pvt Ltd",
+    "currency": "USD",
+    "line_items": [
+      {
+        "description": "Strategy consulting (hours)",
+        "quantity": "-10",
+        "unit_price": "165.04",
+        "amount": "-1650.40"
+      },
+      {
+        "description": "Workshop facilitation",
+        "quantity": "-1",
+        "unit_price": "2600.00",
+        "amount": "-2600.00"
+      },
+      {
+        "description": "Strategy consulting (hours)",
+        "quantity": "-5.5",
+        "unit_price": "187.27",
+        "amount": "-1029.99"
+      },
+      {
+        "description": "Workshop facilitation",
+        "quantity": "-1",
+        "unit_price": "2100.00",
+        "amount": "-2100.00"
+      },
+      {
+        "description": "Travel expenses",
+        "quantity": "-1",
+        "unit_price": "197.83",
+        "amount": "-197.83"
+      }
+    ],
+    "subtotal": "-7578.22",
+    "tax": null,
+    "discount": null,
+    "total": "-7578.22",
+    "prices_include_tax": null
+  },
+  "expected_flags": [
+    {
+      "code": "negative_amount",
+      "field_path": "subtotal"
+    },
+    {
+      "code": "negative_amount",
+      "field_path": "total"
+    },
+    {
+      "code": "negative_amount",
+      "field_path": "line_items[0].quantity"
+    },
+    {
+      "code": "negative_amount",
+      "field_path": "line_items[0].amount"
+    },
+    {
+      "code": "negative_amount",
+      "field_path": "line_items[1].quantity"
+    },
+    {
+      "code": "negative_amount",
+      "field_path": "line_items[1].amount"
+    },
+    {
+      "code": "negative_amount",
+      "field_path": "line_items[2].quantity"
+    },
+    {
+      "code": "negative_amount",
+      "field_path": "line_items[2].amount"
+    },
+    {
+      "code": "negative_amount",
+      "field_path": "line_items[3].quantity"
+    },
+    {
+      "code": "negative_amount",
+      "field_path": "line_items[3].amount"
+    },
+    {
+      "code": "negative_amount",
+      "field_path": "line_items[4].quantity"
+    },
+    {
+      "code": "negative_amount",
+      "field_path": "line_items[4].amount"
+    }
+  ]
+}

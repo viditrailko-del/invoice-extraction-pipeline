@@ -1,0 +1,49 @@
+{
+  "id": "syn-022",
+  "file": "syn-022.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "no invoice number printed",
+  "layout": "minimal",
+  "planted": [
+    "missing_field"
+  ],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": null,
+    "invoice_date": "2026-08-31",
+    "due_date": "2026-09-30",
+    "vendor": {
+      "name": "Northwind Cloud Services Ltd.",
+      "address": "12 Harbour Street, Bristol BS1 4XY, United Kingdom",
+      "tax_id": "GB123456789"
+    },
+    "bill_to_name": "Fjordline Retail AS",
+    "currency": "GBP",
+    "line_items": [
+      {
+        "description": "Managed backup (TB)",
+        "quantity": "2",
+        "unit_price": "23.15",
+        "amount": "46.30"
+      },
+      {
+        "description": "Cloud hosting - July",
+        "quantity": "1",
+        "unit_price": "436.11",
+        "amount": "436.11"
+      }
+    ],
+    "subtotal": "482.41",
+    "tax": "96.48",
+    "discount": null,
+    "total": "578.89",
+    "prices_include_tax": false
+  },
+  "expected_flags": [
+    {
+      "code": "missing_field",
+      "field_path": "invoice_number"
+    }
+  ]
+}

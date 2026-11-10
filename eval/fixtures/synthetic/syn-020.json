@@ -1,0 +1,55 @@
+{
+  "id": "syn-020",
+  "file": "syn-020.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "due date before invoice date",
+  "layout": "classic",
+  "planted": [
+    "due_before_invoice"
+  ],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "F2026/6086",
+    "invoice_date": "2026-08-25",
+    "due_date": "2026-07-31",
+    "vendor": {
+      "name": "Atelier Lumière SARL",
+      "address": "8 Rue des Lilas, 69003 Lyon, France",
+      "tax_id": "FR40303265045"
+    },
+    "bill_to_name": "Contoso Pharmaceuticals",
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "Conception graphique",
+        "quantity": "3",
+        "unit_price": "519.35",
+        "amount": "1558.05"
+      },
+      {
+        "description": "Impression affiches A2",
+        "quantity": "167",
+        "unit_price": "4.23",
+        "amount": "706.41"
+      },
+      {
+        "description": "Conception graphique",
+        "quantity": "1",
+        "unit_price": "766.69",
+        "amount": "766.69"
+      }
+    ],
+    "subtotal": "3031.15",
+    "tax": "606.23",
+    "discount": null,
+    "total": "3637.38",
+    "prices_include_tax": false
+  },
+  "expected_flags": [
+    {
+      "code": "due_before_invoice",
+      "field_path": "due_date"
+    }
+  ]
+}

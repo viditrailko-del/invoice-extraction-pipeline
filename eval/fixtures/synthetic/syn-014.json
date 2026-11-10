@@ -1,0 +1,102 @@
+{
+  "id": "syn-014",
+  "file": "syn-014.png",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "12 lines, fractional hours, PNG",
+  "layout": "band",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "NW-2026-5610",
+    "invoice_date": "2026-07-25",
+    "due_date": "2026-08-24",
+    "vendor": {
+      "name": "Northwind Cloud Services Ltd.",
+      "address": "12 Harbour Street, Bristol BS1 4XY, United Kingdom",
+      "tax_id": "GB123456789"
+    },
+    "bill_to_name": "Fjordline Retail AS",
+    "currency": "GBP",
+    "line_items": [
+      {
+        "description": "Database instance db.m5",
+        "quantity": "2",
+        "unit_price": "154.66",
+        "amount": "309.32"
+      },
+      {
+        "description": "SSL certificate",
+        "quantity": "3",
+        "unit_price": "39.50",
+        "amount": "118.50"
+      },
+      {
+        "description": "SSL certificate",
+        "quantity": "3",
+        "unit_price": "39.50",
+        "amount": "118.50"
+      },
+      {
+        "description": "SSL certificate",
+        "quantity": "1",
+        "unit_price": "39.50",
+        "amount": "39.50"
+      },
+      {
+        "description": "SSL certificate",
+        "quantity": "1",
+        "unit_price": "39.50",
+        "amount": "39.50"
+      },
+      {
+        "description": "Database instance db.m5",
+        "quantity": "4",
+        "unit_price": "163.82",
+        "amount": "655.28"
+      },
+      {
+        "description": "Domain renewal",
+        "quantity": "3",
+        "unit_price": "14.99",
+        "amount": "44.97"
+      },
+      {
+        "description": "Managed backup (TB)",
+        "quantity": "1",
+        "unit_price": "12.60",
+        "amount": "12.60"
+      },
+      {
+        "description": "Managed backup (TB)",
+        "quantity": "6",
+        "unit_price": "17.02",
+        "amount": "102.12"
+      },
+      {
+        "description": "Managed backup (TB)",
+        "quantity": "8",
+        "unit_price": "16.12",
+        "amount": "128.96"
+      },
+      {
+        "description": "Support hours",
+        "quantity": "8.5",
+        "unit_price": "92.99",
+        "amount": "790.42"
+      },
+      {
+        "description": "Support hours",
+        "quantity": "8.5",
+        "unit_price": "74.97",
+        "amount": "637.25"
+      }
+    ],
+    "subtotal": "2996.92",
+    "tax": "599.38",
+    "discount": null,
+    "total": "3596.30",
+    "prices_include_tax": false
+  },
+  "expected_flags": []
+}

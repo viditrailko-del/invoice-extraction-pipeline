@@ -1,0 +1,48 @@
+{
+  "id": "syn-026",
+  "file": "syn-026.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "prices include VAT",
+  "layout": "minimal",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "NW-2026-3217",
+    "invoice_date": "2026-07-26",
+    "due_date": "2026-08-13",
+    "vendor": {
+      "name": "Northwind Cloud Services Ltd.",
+      "address": "12 Harbour Street, Bristol BS1 4XY, United Kingdom",
+      "tax_id": "GB123456789"
+    },
+    "bill_to_name": "Orion Health Partners",
+    "currency": "GBP",
+    "line_items": [
+      {
+        "description": "SSL certificate",
+        "quantity": "1",
+        "unit_price": "39.50",
+        "amount": "39.50"
+      },
+      {
+        "description": "Database instance db.m5",
+        "quantity": "1",
+        "unit_price": "250.62",
+        "amount": "250.62"
+      },
+      {
+        "description": "Managed backup (TB)",
+        "quantity": "2",
+        "unit_price": "24.53",
+        "amount": "49.06"
+      }
+    ],
+    "subtotal": null,
+    "tax": "56.53",
+    "discount": null,
+    "total": "339.18",
+    "prices_include_tax": true
+  },
+  "expected_flags": []
+}

@@ -1,0 +1,54 @@
+{
+  "id": "syn-027",
+  "file": "syn-027.jpg",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "German, inkl. MwSt., scanned",
+  "layout": "band",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "RE-202604496",
+    "invoice_date": "2026-07-30",
+    "due_date": "2026-08-29",
+    "vendor": {
+      "name": "Kessler Maschinenbau GmbH",
+      "address": "Industriestraße 14, 70565 Stuttgart, Deutschland",
+      "tax_id": "DE287451903"
+    },
+    "bill_to_name": "Rivière Bleue Événements",
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "Dichtungssatz",
+        "quantity": "5",
+        "unit_price": "15.50",
+        "amount": "77.50"
+      },
+      {
+        "description": "Frachtkosten",
+        "quantity": "1",
+        "unit_price": "59.45",
+        "amount": "59.45"
+      },
+      {
+        "description": "Montage (Std.)",
+        "quantity": "14",
+        "unit_price": "75.08",
+        "amount": "1051.12"
+      },
+      {
+        "description": "Hydraulikzylinder HZ-40",
+        "quantity": "2",
+        "unit_price": "186.10",
+        "amount": "372.20"
+      }
+    ],
+    "subtotal": null,
+    "tax": "249.12",
+    "discount": null,
+    "total": "1560.27",
+    "prices_include_tax": true
+  },
+  "expected_flags": []
+}

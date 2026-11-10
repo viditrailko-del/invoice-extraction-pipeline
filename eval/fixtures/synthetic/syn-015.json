@@ -1,0 +1,54 @@
+{
+  "id": "syn-015",
+  "file": "syn-015.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "discount, minimal layout",
+  "layout": "minimal",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "MLL-09817",
+    "invoice_date": "2026-07-22",
+    "due_date": "2026-08-13",
+    "vendor": {
+      "name": "Maple Leaf Logistics Inc.",
+      "address": "220 King St W, Toronto, ON M5H 1K4, Canada",
+      "tax_id": "123456789RT0001"
+    },
+    "bill_to_name": "Rivière Bleue Événements",
+    "currency": "CAD",
+    "line_items": [
+      {
+        "description": "Pallet storage (per pallet/week)",
+        "quantity": "47",
+        "unit_price": "6.65",
+        "amount": "312.55"
+      },
+      {
+        "description": "Pallet storage (per pallet/week)",
+        "quantity": "24",
+        "unit_price": "10.80",
+        "amount": "259.20"
+      },
+      {
+        "description": "Customs brokerage",
+        "quantity": "1",
+        "unit_price": "136.78",
+        "amount": "136.78"
+      },
+      {
+        "description": "Customs brokerage",
+        "quantity": "1",
+        "unit_price": "126.09",
+        "amount": "126.09"
+      }
+    ],
+    "subtotal": "834.62",
+    "tax": "92.23",
+    "discount": "125.19",
+    "total": "801.66",
+    "prices_include_tax": false
+  },
+  "expected_flags": []
+}

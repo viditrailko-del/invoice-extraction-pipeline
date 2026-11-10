@@ -1,0 +1,36 @@
+{
+  "id": "syn-010",
+  "file": "syn-010.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "single line, no bill-to",
+  "layout": "minimal",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "NW-2026-1387",
+    "invoice_date": "2026-09-23",
+    "due_date": "2026-10-14",
+    "vendor": {
+      "name": "Northwind Cloud Services Ltd.",
+      "address": "12 Harbour Street, Bristol BS1 4XY, United Kingdom",
+      "tax_id": "GB123456789"
+    },
+    "bill_to_name": null,
+    "currency": "GBP",
+    "line_items": [
+      {
+        "description": "Managed backup (TB)",
+        "quantity": "5",
+        "unit_price": "16.84",
+        "amount": "84.20"
+      }
+    ],
+    "subtotal": "84.20",
+    "tax": "16.84",
+    "discount": null,
+    "total": "101.04",
+    "prices_include_tax": false
+  },
+  "expected_flags": []
+}

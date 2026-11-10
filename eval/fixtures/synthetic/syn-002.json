@@ -1,0 +1,60 @@
+{
+  "id": "syn-002",
+  "file": "syn-002.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "US date format, discount printed positive",
+  "layout": "band",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "INV004772",
+    "invoice_date": "2026-09-30",
+    "due_date": "2026-10-14",
+    "vendor": {
+      "name": "Brightline Design Studio LLC",
+      "address": "480 Mission Street, Suite 300, San Francisco, CA 94105, USA",
+      "tax_id": "94-3812775"
+    },
+    "bill_to_name": "Müller & Söhne KG",
+    "currency": "USD",
+    "line_items": [
+      {
+        "description": "Print-ready files",
+        "quantity": "1",
+        "unit_price": "120.00",
+        "amount": "120.00"
+      },
+      {
+        "description": "Brand identity workshop",
+        "quantity": "1",
+        "unit_price": "2000.00",
+        "amount": "2000.00"
+      },
+      {
+        "description": "Illustration",
+        "quantity": "2",
+        "unit_price": "203.70",
+        "amount": "407.40"
+      },
+      {
+        "description": "Brand identity workshop",
+        "quantity": "1",
+        "unit_price": "2400.00",
+        "amount": "2400.00"
+      },
+      {
+        "description": "Stock photo license",
+        "quantity": "6",
+        "unit_price": "37.00",
+        "amount": "222.00"
+      }
+    ],
+    "subtotal": "5149.40",
+    "tax": "405.52",
+    "discount": "514.94",
+    "total": "5039.98",
+    "prices_include_tax": false
+  },
+  "expected_flags": []
+}

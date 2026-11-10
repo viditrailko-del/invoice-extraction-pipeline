@@ -1,0 +1,66 @@
+{
+  "id": "syn-024",
+  "file": "syn-024.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "two problems at once",
+  "layout": "classic",
+  "planted": [
+    "due_before_invoice",
+    "line_math"
+  ],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "09693",
+    "invoice_date": "2026-07-14",
+    "due_date": "2026-06-24",
+    "vendor": {
+      "name": "Nordlys Data AS",
+      "address": "Karl Johans gate 5, 0154 Oslo, Norway",
+      "tax_id": "NO987654321MVA"
+    },
+    "bill_to_name": "Orion Health Partners",
+    "currency": "NOK",
+    "line_items": [
+      {
+        "description": "Onboarding",
+        "quantity": "1",
+        "unit_price": "7800.00",
+        "amount": "7800.00"
+      },
+      {
+        "description": "Data pipeline subscription",
+        "quantity": "1",
+        "unit_price": "7900.00",
+        "amount": "7900.00"
+      },
+      {
+        "description": "Data pipeline subscription",
+        "quantity": "1",
+        "unit_price": "8200.00",
+        "amount": "8200.00"
+      },
+      {
+        "description": "Onboarding",
+        "quantity": "1",
+        "unit_price": "8200.00",
+        "amount": "8210.00"
+      }
+    ],
+    "subtotal": "32110.00",
+    "tax": "8027.50",
+    "discount": null,
+    "total": "40137.50",
+    "prices_include_tax": false
+  },
+  "expected_flags": [
+    {
+      "code": "line_math",
+      "field_path": "line_items[3].amount"
+    },
+    {
+      "code": "due_before_invoice",
+      "field_path": "due_date"
+    }
+  ]
+}

@@ -91,6 +91,7 @@ tests/
 
 ## Extraction notes (learned the hard way)
 
+- Current prompt: `v2` (adds `prices_include_tax`). Old runs keep `v1` in `extraction_runs.prompt_version`.
 - Main model `gemini-3.5-flash`, fallback `gemini-3.5-flash-lite` (set in `.env` / `app/config.py`). ~3s per invoice.
 - `thinking_level="low"`: the default/high thinking took 80–160s for identical output. `minimal` is rejected by these models.
 - Newest models (e.g. `gemini-3.8-flash`) were frequently 503-overloaded. `gemini-2.5-*` returns 404 for new keys.
@@ -99,6 +100,17 @@ tests/
 - Comparing `Decimal("1858.8") == 1858.8` is **False**. Always compare money to `Decimal("...")`, never float literals.
 - Extraction runs in FastAPI `BackgroundTasks` (`app/extraction/service.py`). `POST /invoices/{id}/retry` re-runs failed ones.
 - Generate a test invoice: `docker compose exec -T api uv run --frozen python scripts/make_sample_invoice.py storage/samples/x.pdf`
+
+## Eval fixtures (Phase 0)
+
+- `docker compose run --rm -T api uv run --frozen python -m scripts.make_fixtures` rebuilds `eval/fixtures/synthetic/` from the `SPECS` list. It's deterministic (seeded and byte-identical), so never hand-edit those files; change `SPECS` and regenerate.
+- Fixture = `<id>.<pdf|png|jpg>` + `<id>.json` containing `expected` (ExtractedInvoice **as printed**, wrong numbers included), `expected_flags` (what `run_checks` must raise at `as_of`), `planted`, and `duplicate_of`.
+- Synthetic data is built first and the document is drawn from it, so labels are exact. The generator asserts the checks raise exactly the planted errors and that key values appear in the PDF text.
+- Dates in synthetic invoices use day > 12, so day/month order is never ambiguous.
+- `tests/test_fixtures.py` validates every fixture. If you change a check or the schema, regenerate the fixtures.
+- Discount `expected` keeps the printed sign (`-107.48` if printed negative); the eval should compare discount by absolute value.
+- Real invoices: Zenodo 7213544 (CC BY 4.0, attribution required) is downloaded and checksum-verified in gitignored `storage/datasets/zenodo-7213544/`. It has 190 phone photos of Portuguese till receipts (tax included). Its labels cover header fields only, as printed (6 date formats, `12,20` vs `9.98`, lowercase). Most receipts show a private buyer NIF (`121653897`), so **don't commit the images**: commit our checked label JSON plus a fetch script. Hand-label from the document, not from LLM output.
+- Other candidates: katanaml invoices-donut-data-v1 (MIT, likely synthetic), RealKIE FCC invoices (real, CC BY-NC), DocILE (token-gated, license unclear). Ask before downloading.
 
 ## Reliability design (decided, don't undo)
 
@@ -110,6 +122,7 @@ tests/
 - **Approval rule:** `approved` only when an extraction has zero flags; *any* flag (warning or error) → `needs_review`. Loosen only with eval data (Phase 5).
 - Checks live in `app/checks/` (`required`, `arithmetic`, `dates`), are collected by `runner.run_checks(inv, today)`, and return `checks.base.Flag`. `today` is a parameter so checks stay pure. Duplicate detection needs the DB, so it runs in `service.py`, not the runner.
 - Total check accepts the discount printed as positive or negative, and the subtotal given before or after the discount; it flags only when none of these readings adds up. Line math rounds half-up to cents.
+- **Tax added vs included** varies by document type, not just country (US and B2B invoices add tax; EU shop receipts include it). The extracted field `prices_include_tax` decides: `false` → total = base − discount + tax; `true` → total = base − discount; `null` → accept either. Never infer it from the country. On tax-included receipts the tax base ("Base Imp.") is not the subtotal.
 - **Review (Phase 4, `app/review/`):** `PATCH /invoices/{id}` applies all changes or none. The result is validated against `ExtractedInvoice`, each changed field appends a `corrections` row, the checks re-run, and status is recomputed (no open flags → approved). `POST .../flags/{flag_id}/resolve` = a human accepts a flagged value. `POST .../reject` is final. `GET .../corrections` returns the audit trail.
 - On re-check, a flag's identity is `(code, field_path, reason)`. Problem gone → resolved by `system:recheck` (never deleted). A problem a human already resolved is not raised again. Changing vendor or invoice number re-runs duplicate detection.
 - Corrections compare values as Decimal/date, so `"22"` vs `"22.00"` is not a change. Invoice rows are locked (`FOR UPDATE`) during review actions. Order the audit trail by `seq`, not `created_at`: `now()` is the transaction start, so all rows from one PATCH share a timestamp.
@@ -125,7 +138,7 @@ Build in phase order. Don't add queues, auth, S3, or a frontend until the eval h
 
 | Phase | Goal | Status |
 |---|---|---|
-| 0 | Ground-truth fixtures (20–30 labeled invoices) | todo |
+| 0 | Ground-truth fixtures (20–30 labeled invoices) | in progress: 28 synthetic done, real (Zenodo) pending |
 | 1 | Skeleton: FastAPI + Postgres + Alembic + upload/get, idempotent hashing | done |
 | 2 | Gemini extraction + Pydantic validation + retry + raw storage | done |
 | 3 | Deterministic checks + flags + status | done |

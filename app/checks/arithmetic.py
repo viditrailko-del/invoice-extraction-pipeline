@@ -56,11 +56,19 @@ def check_subtotal(inv: ExtractedInvoice) -> list[Flag]:
 
 
 def check_total(inv: ExtractedInvoice) -> list[Flag]:
-    """subtotal - discount + tax must equal total.
+    """The total must follow from subtotal, discount and tax.
 
-    Invoices disagree on whether the subtotal is before or after the discount, and
-    whether a discount is printed as 50.00 or -50.00. We accept any of those readings
-    and only flag when NONE of them adds up.
+    Whether tax is ADDED (subtotal + tax = total, e.g. US, B2B invoices) or already
+    INCLUDED (lines add up to the total, e.g. EU shop receipts) depends on the
+    document, so it's an extracted field, not a guess:
+      prices_include_tax = False -> total = base - discount + tax
+      prices_include_tax = True  -> total = base - discount   (tax is "of which")
+      prices_include_tax = None  -> accept either reading
+    Being strict when the document says which applies catches the classic LLM
+    mistake of reading the subtotal line as the total on a tax-added invoice.
+
+    Also tolerated: the subtotal printed before or after the discount, and a
+    discount printed as 50.00 or -50.00.
     """
     if inv.total is None:
         return []
@@ -69,16 +77,20 @@ def check_total(inv: ExtractedInvoice) -> list[Flag]:
         return []
     tax = inv.tax or Decimal("0")
     discount = abs(inv.discount or Decimal("0"))
-    candidates = {base + tax - discount, base + tax}  # discount not yet / already applied
-    if any(money_equal(c, inv.total) for c in candidates):
+    # first of each pair: discount not yet applied; second: already in the subtotal
+    added = [base + tax - discount, base + tax]
+    included = [base - discount, base]
+    readings = {False: added, True: included, None: added + included}[inv.prices_include_tax]
+    if any(money_equal(expected, inv.total) for expected in readings):
         return []
     base_name = "subtotal" if inv.subtotal is not None else "line items"
+    convention = {False: "tax added", True: "tax included", None: "tax added or included"}
     return [
         Flag(
             "total_mismatch",
             "total",
-            f"{base_name} {base} - discount {discount} + tax {tax} = {base + tax - discount}, "
-            f"but total is {inv.total}",
+            f"{base_name} {base}, discount {discount}, tax {tax} "
+            f"({convention[inv.prices_include_tax]}) gives {readings[0]}, but total is {inv.total}",
             "error",
         )
     ]

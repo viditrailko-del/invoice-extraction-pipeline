@@ -1,0 +1,61 @@
+{
+  "id": "syn-017",
+  "file": "syn-017.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "one line amount != qty x price",
+  "layout": "classic",
+  "planted": [
+    "line_math"
+  ],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "NW-2026-4600",
+    "invoice_date": "2026-08-29",
+    "due_date": "2026-09-28",
+    "vendor": {
+      "name": "Northwind Cloud Services Ltd.",
+      "address": "12 Harbour Street, Bristol BS1 4XY, United Kingdom",
+      "tax_id": "GB123456789"
+    },
+    "bill_to_name": "Contoso Pharmaceuticals",
+    "currency": "GBP",
+    "line_items": [
+      {
+        "description": "Database instance db.m5",
+        "quantity": "1",
+        "unit_price": "221.22",
+        "amount": "221.22"
+      },
+      {
+        "description": "Cloud hosting - July",
+        "quantity": "1",
+        "unit_price": "594.72",
+        "amount": "604.72"
+      },
+      {
+        "description": "SSL certificate",
+        "quantity": "2",
+        "unit_price": "39.50",
+        "amount": "79.00"
+      },
+      {
+        "description": "Managed backup (TB)",
+        "quantity": "10",
+        "unit_price": "21.45",
+        "amount": "214.50"
+      }
+    ],
+    "subtotal": "1119.44",
+    "tax": "223.89",
+    "discount": null,
+    "total": "1343.33",
+    "prices_include_tax": false
+  },
+  "expected_flags": [
+    {
+      "code": "line_math",
+      "field_path": "line_items[1].amount"
+    }
+  ]
+}
