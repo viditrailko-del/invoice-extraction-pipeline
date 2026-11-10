@@ -4,6 +4,7 @@ Tests NEVER touch the dev database or call real Gemini.
 """
 
 import os
+from datetime import date
 
 # Must be set BEFORE importing the app: startup recovery would otherwise touch the
 # dev database and call real Gemini. Recovery is tested directly instead.
@@ -24,12 +25,12 @@ from app.extraction.deps import get_extractor, get_session_factory
 from app.main import app
 
 VALID_JSON = """{
-  "invoice_number": "INV-1", "invoice_date": "2026-11-03", "due_date": null,
+  "invoice_number": "INV-1", "invoice_date": "__TODAY__", "due_date": null,
   "vendor": {"name": "Acme", "address": null, "tax_id": null},
   "bill_to_name": "Buyer", "currency": "USD",
   "line_items": [{"description": "Widget", "quantity": 2, "unit_price": "10.00", "amount": "20.00"}],
   "subtotal": "20.00", "tax": "2.00", "discount": null, "total": "22.00"
-}"""
+}""".replace("__TODAY__", date.today().isoformat())  # always passes the date checks
 
 
 class FakeExtractor:

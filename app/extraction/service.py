@@ -9,15 +9,15 @@ process_invoice() is the whole Phase 2 job for one invoice:
   3. Validate the answer with Pydantic. If it doesn't fit the schema, retry ONCE,
      telling the model exactly what was wrong.        (bad output)
   4. Anything still failing -> status=extraction_failed. Never crash.
-
-Until Phase 3's deterministic checks exist, nothing is auto-approved: every
-successful extraction goes to needs_review.
+  5. Run deterministic checks + duplicate detection -> field_flags.
+     Zero flags -> approved. ANY flag (warning or error) -> needs_review.
 """
 
 import logging
 import time
 import uuid
 from collections.abc import Callable
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 
@@ -26,6 +26,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.checks.duplicates import make_dup_key
+from app.checks.runner import run_checks
 from app.config import Settings
 from app.db.models import ExtractionRun, FieldFlag, Invoice, InvoiceStatus, Severity
 from app.extraction.client import Extractor, LLMError, LLMResponse
@@ -81,8 +82,10 @@ def process_invoice(
             invoice.status = InvoiceStatus.extraction_failed
         else:
             invoice.extracted_json = extracted.model_dump(mode="json")  # Decimal -> exact string
-            invoice.status = InvoiceStatus.needs_review  # Phase 3 decides approved vs review
-            _flag_business_duplicates(db, invoice, extracted)
+            flag_count = _apply_checks(db, invoice, extracted)
+            flag_count += _flag_business_duplicates(db, invoice, extracted)
+            # Safe to be wrong: auto-approve only when nothing at all looked off.
+            invoice.status = InvoiceStatus.needs_review if flag_count else InvoiceStatus.approved
         invoice.processing_started_at = None
         db.commit()
 
@@ -107,14 +110,30 @@ def _claim(db: Session, invoice_id: uuid.UUID) -> bool:
     return claimed is not None
 
 
-def _flag_business_duplicates(db: Session, invoice: Invoice, extracted: ExtractedInvoice) -> None:
+def _apply_checks(db: Session, invoice: Invoice, extracted: ExtractedInvoice) -> int:
+    """Run the pure checks and store each result as a field_flags row."""
+    flags = run_checks(extracted, today=date.today())
+    for f in flags:
+        db.add(
+            FieldFlag(
+                invoice_id=invoice.id,
+                field_path=f.field_path,
+                reason=f.reason,
+                severity=Severity(f.severity),
+            )
+        )
+    return len(flags)
+
+
+def _flag_business_duplicates(db: Session, invoice: Invoice, extracted: ExtractedInvoice) -> int:
     """Same vendor + invoice number as an existing invoice -> flag for a human.
 
     Flag, don't reject: it might be a legit re-issue, and a human should decide.
+    Returns the number of flags added.
     """
     invoice.dup_key = make_dup_key(extracted)
     if invoice.dup_key is None:
-        return
+        return 0
     others = db.scalars(
         select(Invoice)
         .where(Invoice.dup_key == invoice.dup_key, Invoice.id != invoice.id)
@@ -133,6 +152,7 @@ def _flag_business_duplicates(db: Session, invoice: Invoice, extracted: Extracte
                 ),
             )
         )
+    return len(others)
 
 
 def recover_stuck_jobs(session_factory: Callable[[], Session]) -> list[uuid.UUID]:

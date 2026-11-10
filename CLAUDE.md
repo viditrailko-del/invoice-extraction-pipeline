@@ -107,6 +107,9 @@ tests/
 - Poison files: after `MAX_JOB_ATTEMPTS` (3) worker pickups → `extraction_failed`. `POST /invoices/{id}/retry` resets `attempts` to 0.
 - **Business duplicates** (same invoice, different file): `app/checks/duplicates.py` builds `dup_key` = normalized vendor + invoice number, stored in an indexed column. A match adds an `error` flag (never a silent reject); a human decides.
 - Known limits: a vendor name that differs beyond legal suffixes (Ltd/Inc/...) won't match. Two copies processed at the exact same moment may miss each other.
+- **Approval rule:** `approved` only when an extraction has zero flags; *any* flag (warning or error) → `needs_review`. Loosen only with eval data (Phase 5).
+- Checks live in `app/checks/` (`required`, `arithmetic`, `dates`), are collected by `runner.run_checks(inv, today)`, and return `checks.base.Flag`. `today` is a parameter so checks stay pure. Duplicate detection needs the DB, so it runs in `service.py`, not the runner.
+- Total check accepts the discount printed as positive or negative, and the subtotal given before or after the discount; it flags only when none of these readings adds up. Line math rounds half-up to cents.
 - Alembic autogenerate does **not** detect new Postgres enum values: add `ALTER TYPE ... ADD VALUE` by hand.
 - A new derived column needs a **backfill** for old rows (see `scripts/backfill_dup_keys.py`, run with `python -m scripts.<name>`). Backfills must be idempotent.
 - Tests set `RECOVER_ON_STARTUP=false` (in `tests/conftest.py`) so startup never touches the dev DB or real Gemini.
@@ -120,7 +123,7 @@ Build in phase order. Don't add queues, auth, S3, or a frontend until the eval h
 | 0 | Ground-truth fixtures (20–30 labeled invoices) | todo |
 | 1 | Skeleton: FastAPI + Postgres + Alembic + upload/get, idempotent hashing | done |
 | 2 | Gemini extraction + Pydantic validation + retry + raw storage | done |
-| 3 | Deterministic checks + flags + status | todo |
+| 3 | Deterministic checks + flags + status | done |
 | 4 | Review endpoints: list flagged, PATCH corrections w/ audit | todo |
 | 5 | Eval harness: field accuracy, flag precision/recall, cost/latency | todo |
 | 6 | Hardening: logging, Dockerfile, README with real eval numbers | todo |

@@ -71,7 +71,7 @@ def test_recovered_job_actually_completes(db, tmp_path, fake_llm):
     for invoice_id in recover_stuck_jobs(TestSession):
         process_invoice(invoice_id, TestSession, fake_llm, SETTINGS)
     db.expire_all()
-    assert inv.status == InvoiceStatus.needs_review
+    assert inv.status == InvoiceStatus.approved
     assert inv.extracted_json["invoice_number"] == "INV-1"
     assert inv.attempts == 2
 
@@ -146,7 +146,9 @@ def test_reason_shows_both_totals(client, fake_llm):
     # Same invoice number but different total: maybe a corrected re-issue. Human decides.
     fake_llm.replies = [make_json(total="22.00"), make_json(total="25.00")]
     upload(client, PDF_BYTES)
-    [flag] = flags(client, upload(client, PDF_BYTES + b"2"))
+    all_flags = flags(client, upload(client, PDF_BYTES + b"2"))
+    # 25.00 also fails the arithmetic check (20.00 + 2.00), so look at the dup flag only
+    [flag] = [f for f in all_flags if f["field_path"] == "invoice_number"]
     assert "25.00 vs 22.00" in flag["reason"]
 
 
