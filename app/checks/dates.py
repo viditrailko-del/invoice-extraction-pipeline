@@ -19,6 +19,7 @@ def check_due_date_order(inv: ExtractedInvoice) -> list[Flag]:
         return []
     return [
         Flag(
+            "due_before_invoice",
             "due_date",
             f"Due date {inv.due_date} is before invoice date {inv.invoice_date}",
             "error",
@@ -31,7 +32,9 @@ def check_invoice_date_plausible(inv: ExtractedInvoice, today: date) -> list[Fla
     if d is None:
         return []
     if d > today:
-        return [Flag("invoice_date", f"Invoice date {d} is in the future", "warning")]
+        return [Flag("date_implausible", "invoice_date", f"Invoice date {d} is in the future", "warning")]
     if today - d > MAX_INVOICE_AGE:
-        return [Flag("invoice_date", f"Invoice date {d} is more than 2 years old", "warning")]
+        return [
+            Flag("date_implausible", "invoice_date", f"Invoice date {d} is more than 2 years old", "warning")
+        ]
     return []

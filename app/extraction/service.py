@@ -25,7 +25,8 @@ from pydantic import ValidationError
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
-from app.checks.duplicates import make_dup_key
+from app.checks.base import Flag
+from app.checks.duplicates import DUPLICATE_CODE, make_dup_key
 from app.checks.runner import run_checks
 from app.config import Settings
 from app.db.models import ExtractionRun, FieldFlag, Invoice, InvoiceStatus, Severity
@@ -82,8 +83,8 @@ def process_invoice(
             invoice.status = InvoiceStatus.extraction_failed
         else:
             invoice.extracted_json = extracted.model_dump(mode="json")  # Decimal -> exact string
-            flag_count = _apply_checks(db, invoice, extracted)
-            flag_count += _flag_business_duplicates(db, invoice, extracted)
+            flag_count = len(store_check_flags(db, invoice, run_checks(extracted, date.today())))
+            flag_count += flag_business_duplicates(db, invoice, extracted)
             # Safe to be wrong: auto-approve only when nothing at all looked off.
             invoice.status = InvoiceStatus.needs_review if flag_count else InvoiceStatus.approved
         invoice.processing_started_at = None
@@ -110,22 +111,23 @@ def _claim(db: Session, invoice_id: uuid.UUID) -> bool:
     return claimed is not None
 
 
-def _apply_checks(db: Session, invoice: Invoice, extracted: ExtractedInvoice) -> int:
-    """Run the pure checks and store each result as a field_flags row."""
-    flags = run_checks(extracted, today=date.today())
-    for f in flags:
-        db.add(
-            FieldFlag(
-                invoice_id=invoice.id,
-                field_path=f.field_path,
-                reason=f.reason,
-                severity=Severity(f.severity),
-            )
+def store_check_flags(db: Session, invoice: Invoice, flags: list[Flag]) -> list[FieldFlag]:
+    """Turn pure check results into field_flags rows (the checks never touch the DB)."""
+    rows = [
+        FieldFlag(
+            invoice_id=invoice.id,
+            code=f.code,
+            field_path=f.field_path,
+            reason=f.reason,
+            severity=Severity(f.severity),
         )
-    return len(flags)
+        for f in flags
+    ]
+    db.add_all(rows)
+    return rows
 
 
-def _flag_business_duplicates(db: Session, invoice: Invoice, extracted: ExtractedInvoice) -> int:
+def flag_business_duplicates(db: Session, invoice: Invoice, extracted: ExtractedInvoice) -> int:
     """Same vendor + invoice number as an existing invoice -> flag for a human.
 
     Flag, don't reject: it might be a legit re-issue, and a human should decide.
@@ -140,10 +142,11 @@ def _flag_business_duplicates(db: Session, invoice: Invoice, extracted: Extracte
         .order_by(Invoice.created_at)
     ).all()
     for other in others:
-        other_total = (other.extracted_json or {}).get("total")
+        other_total = (other.current_json or {}).get("total")
         db.add(
             FieldFlag(
                 invoice_id=invoice.id,
+                code=DUPLICATE_CODE,
                 field_path="invoice_number",
                 severity=Severity.error,
                 reason=(

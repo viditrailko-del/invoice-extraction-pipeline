@@ -11,6 +11,8 @@ import re
 
 from app.schemas.extraction import ExtractedInvoice
 
+DUPLICATE_CODE = "duplicate"  # field_flags.code for business-duplicate flags
+
 # Legal-form words that vary between documents from the same company.
 _COMPANY_SUFFIXES = re.compile(
     r"\b(ltd|limited|llc|inc|incorporated|corp|corporation|co|company|plc|gmbh|ag|sa|bv"

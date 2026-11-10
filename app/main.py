@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.invoices import router as invoices_router
+from app.api.review import router as review_router
 from app.config import get_settings
 from app.db.session import SessionLocal, get_db
 from app.extraction.deps import get_extractor
@@ -38,6 +39,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="Invoice Extraction Pipeline", version="0.2.0", lifespan=lifespan)
 app.include_router(invoices_router)
+app.include_router(review_router)
 
 
 @app.get("/health")

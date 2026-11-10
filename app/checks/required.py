@@ -13,7 +13,7 @@ def check_required_fields(inv: ExtractedInvoice) -> list[Flag]:
         "total": inv.total,
     }
     return [
-        Flag(path, "Required field is missing", "error")
+        Flag("missing_field", path, "Required field is missing", "error")
         for path, value in required.items()
         if value is None or (isinstance(value, str) and not value.strip())
     ]

@@ -6,10 +6,12 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     DateTime,
     Enum,
     ForeignKey,
+    Identity,
     Integer,
     Numeric,
     String,
@@ -33,6 +35,7 @@ class InvoiceStatus(str, enum.Enum):
     approved = "approved"
     needs_review = "needs_review"
     extraction_failed = "extraction_failed"
+    rejected = "rejected"  # a human decided: duplicate, junk, not an invoice
 
 
 class Severity(str, enum.Enum):
@@ -54,7 +57,12 @@ class Invoice(Base):
         default=InvoiceStatus.pending,
         index=True,
     )
+    # Exactly what the LLM returned (after validation). NEVER modified after extraction:
+    # the eval harness compares it against human truth.
     extracted_json: Mapped[dict[str, Any] | None] = mapped_column(JsonType)
+    # Current truth after human corrections; null until the first correction.
+    # Every change that produced it is in `corrections`.
+    corrected_json: Mapped[dict[str, Any] | None] = mapped_column(JsonType)
     # How many times a worker has picked this up. Stops a "poison" file that crashes
     # the server from being retried forever on every restart.
     attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
@@ -69,6 +77,11 @@ class Invoice(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+    @property
+    def current_json(self) -> dict[str, Any] | None:
+        """The best data we have: human-corrected if any, else the LLM's."""
+        return self.corrected_json if self.corrected_json is not None else self.extracted_json
 
     runs: Mapped[list["ExtractionRun"]] = relationship(back_populates="invoice")
     flags: Mapped[list["FieldFlag"]] = relationship(back_populates="invoice")
@@ -105,9 +118,16 @@ class FieldFlag(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     invoice_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("invoices.id"), index=True)
     field_path: Mapped[str] = mapped_column(String(200))  # e.g. "line_items[2].unit_price"
+    # Which check raised it (e.g. "total_mismatch", "duplicate"). Lets a re-run tell
+    # whether a problem is fixed, and lets the eval score each check separately.
+    code: Mapped[str] = mapped_column(String(50))
     reason: Mapped[str] = mapped_column(Text)
     severity: Mapped[Severity] = mapped_column(Enum(Severity, name="flag_severity"))
     resolved: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Who closed it: a reviewer's name, or "system:recheck" when a correction fixed it.
+    resolved_by: Mapped[str | None] = mapped_column(String(100))
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    resolution_note: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -121,11 +141,15 @@ class Correction(Base):
     __tablename__ = "corrections"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    # Insertion order. created_at can't order the audit trail: Postgres now() is the
+    # transaction start, so every row from one PATCH has the same timestamp.
+    seq: Mapped[int] = mapped_column(BigInteger, Identity(), unique=True)
     invoice_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("invoices.id"), index=True)
     field_path: Mapped[str] = mapped_column(String(200))
     old_value: Mapped[Any] = mapped_column(JsonType, nullable=True)
     new_value: Mapped[Any] = mapped_column(JsonType, nullable=True)
     corrected_by: Mapped[str] = mapped_column(String(100))
+    note: Mapped[str | None] = mapped_column(Text)  # why the reviewer changed it
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

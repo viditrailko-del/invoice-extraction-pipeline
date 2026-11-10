@@ -71,10 +71,10 @@ tests/
 
 ## Data model
 
-- `invoices` — id, file_hash (unique), file_path, status (pending/processing/needs_review/approved/extraction_failed), extracted_json, attempts, processing_started_at, dup_key (indexed), created_at, updated_at
+- `invoices` — id, file_hash (unique), file_path, status (pending/processing/needs_review/approved/extraction_failed/rejected), extracted_json (LLM output, never modified), corrected_json (after human edits, null until first), attempts, processing_started_at, dup_key (indexed), created_at, updated_at. `Invoice.current_json` = corrected if any, else extracted
 - `extraction_runs` — invoice_id, raw_response, error, model, prompt_version, latency_ms, input/output tokens, cost_usd (column exists but is **not computed yet**; planned for Phase 5)
-- `field_flags` — invoice_id, field_path (e.g. `line_items[2].unit_price`), reason, severity, resolved
-- `corrections` — invoice_id, field_path, old_value, new_value, corrected_by, created_at
+- `field_flags` — invoice_id, code (check id, e.g. `total_mismatch`, `duplicate`), field_path (e.g. `line_items[2].unit_price`), reason, severity, resolved, resolved_by, resolved_at, resolution_note
+- `corrections` — invoice_id, seq (identity: audit order), field_path, old_value, new_value, corrected_by, note, created_at. A rejection is a row with field_path `status`
 
 ## Rules (important)
 
@@ -110,6 +110,11 @@ tests/
 - **Approval rule:** `approved` only when an extraction has zero flags; *any* flag (warning or error) → `needs_review`. Loosen only with eval data (Phase 5).
 - Checks live in `app/checks/` (`required`, `arithmetic`, `dates`), are collected by `runner.run_checks(inv, today)`, and return `checks.base.Flag`. `today` is a parameter so checks stay pure. Duplicate detection needs the DB, so it runs in `service.py`, not the runner.
 - Total check accepts the discount printed as positive or negative, and the subtotal given before or after the discount; it flags only when none of these readings adds up. Line math rounds half-up to cents.
+- **Review (Phase 4, `app/review/`):** `PATCH /invoices/{id}` applies all changes or none. The result is validated against `ExtractedInvoice`, each changed field appends a `corrections` row, the checks re-run, and status is recomputed (no open flags → approved). `POST .../flags/{flag_id}/resolve` = a human accepts a flagged value. `POST .../reject` is final. `GET .../corrections` returns the audit trail.
+- On re-check, a flag's identity is `(code, field_path, reason)`. Problem gone → resolved by `system:recheck` (never deleted). A problem a human already resolved is not raised again. Changing vendor or invoice number re-runs duplicate detection.
+- Corrections compare values as Decimal/date, so `"22"` vs `"22.00"` is not a change. Invoice rows are locked (`FOR UPDATE`) during review actions. Order the audit trail by `seq`, not `created_at`: `now()` is the transaction start, so all rows from one PATCH share a timestamp.
+- No auth yet: reviewers name themselves in the request body (`corrected_by`).
+- Adding a NOT NULL column to a table with rows: add it nullable, backfill, then `alter_column(nullable=False)`.
 - Alembic autogenerate does **not** detect new Postgres enum values: add `ALTER TYPE ... ADD VALUE` by hand.
 - A new derived column needs a **backfill** for old rows (see `scripts/backfill_dup_keys.py`, run with `python -m scripts.<name>`). Backfills must be idempotent.
 - Tests set `RECOVER_ON_STARTUP=false` (in `tests/conftest.py`) so startup never touches the dev DB or real Gemini.
@@ -124,7 +129,7 @@ Build in phase order. Don't add queues, auth, S3, or a frontend until the eval h
 | 1 | Skeleton: FastAPI + Postgres + Alembic + upload/get, idempotent hashing | done |
 | 2 | Gemini extraction + Pydantic validation + retry + raw storage | done |
 | 3 | Deterministic checks + flags + status | done |
-| 4 | Review endpoints: list flagged, PATCH corrections w/ audit | todo |
+| 4 | Review endpoints: list flagged, PATCH corrections w/ audit | done |
 | 5 | Eval harness: field accuracy, flag precision/recall, cost/latency | todo |
 | 6 | Hardening: logging, Dockerfile, README with real eval numbers | todo |
 

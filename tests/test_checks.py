@@ -63,6 +63,7 @@ def test_missing_required_fields_are_errors():
     flags = check_required_fields(inv(invoice_number=None, total=None, vendor={}))
     assert paths(flags) == ["invoice_number", "vendor.name", "total"]
     assert {f.severity for f in flags} == {"error"}
+    assert {f.code for f in flags} == {"missing_field"}
 
 
 def test_blank_string_counts_as_missing():

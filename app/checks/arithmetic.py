@@ -20,6 +20,7 @@ def check_line_items(inv: ExtractedInvoice) -> list[Flag]:
         if not money_equal(expected, line.amount):
             flags.append(
                 Flag(
+                    "line_math",
                     f"line_items[{i}].amount",
                     f"{line.quantity} x {line.unit_price} = {expected}, but amount is {line.amount}",
                     "error",
@@ -46,6 +47,7 @@ def check_subtotal(inv: ExtractedInvoice) -> list[Flag]:
         return []
     return [
         Flag(
+            "subtotal_mismatch",
             "subtotal",
             f"Line items sum to {lines_sum}, but subtotal is {inv.subtotal}",
             "error",
@@ -73,6 +75,7 @@ def check_total(inv: ExtractedInvoice) -> list[Flag]:
     base_name = "subtotal" if inv.subtotal is not None else "line items"
     return [
         Flag(
+            "total_mismatch",
             "total",
             f"{base_name} {base} - discount {discount} + tax {tax} = {base + tax - discount}, "
             f"but total is {inv.total}",
@@ -96,7 +99,7 @@ def check_negative_amounts(inv: ExtractedInvoice) -> list[Flag]:
         fields[f"line_items[{i}].unit_price"] = line.unit_price
         fields[f"line_items[{i}].amount"] = line.amount
     return [
-        Flag(path, f"Negative value {value} (credit note?)", "warning")
+        Flag("negative_amount", path, f"Negative value {value} (credit note?)", "warning")
         for path, value in fields.items()
         if value is not None and value < 0
     ]

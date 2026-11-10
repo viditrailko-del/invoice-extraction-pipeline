@@ -17,6 +17,7 @@ FlagSeverity = Literal["warning", "error"]
 
 @dataclass(frozen=True)
 class Flag:
+    code: str  # stable check identifier, e.g. "total_mismatch"
     field_path: str  # e.g. "line_items[2].amount"
     reason: str
     severity: FlagSeverity
