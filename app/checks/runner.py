@@ -16,6 +16,7 @@ from app.checks.base import Flag
 from app.checks.dates import check_due_date_order, check_invoice_date_plausible
 from app.checks.required import check_required_fields
 from app.checks.tax import check_tax_base_total, check_tax_breakdown_sum, check_tax_lines
+from app.checks.tax_id import check_vendor_tax_id
 from app.schemas.extraction import ExtractedInvoice
 
 
@@ -28,6 +29,7 @@ def run_checks(inv: ExtractedInvoice, today: date) -> list[Flag]:
         *check_tax_lines(inv),
         *check_tax_breakdown_sum(inv),
         *check_tax_base_total(inv),
+        *check_vendor_tax_id(inv),
         *check_negative_amounts(inv),
         *check_due_date_order(inv),
         *check_invoice_date_plausible(inv, today),

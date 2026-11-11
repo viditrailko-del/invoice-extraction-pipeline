@@ -95,7 +95,7 @@ VENDORS = {
     # multi-rate: a Portuguese shop receipt (tax included) and a German B2B food
     # wholesaler (tax added), each printing a tax table
     "pt": Vendor("Mercearia Flor do Mondego, Lda.", ("Rua Ferreira Borges 41", "3000-180 Coimbra, Portugal"),
-                 "NIF", "PT509876543", "EUR", "€", True, "eu", "dmy", Decimal("0.23"), "IVA",
+                 "NIF", "PT509876544", "EUR", "€", True, "eu", "dmy", Decimal("0.23"), "IVA",
                  "pt", "FS {y}/{n:05d}", "grocery_pt", rates=(Decimal("0.23"), Decimal("0.06"))),
     "de_mixed": Vendor("Rheinland Gastro-Großhandel GmbH", ("Hafenstraße 9", "50678 Köln, Deutschland"),
                        "USt-IdNr.", "DE314159265", "EUR", "€", True, "eu", "dmy_dot", Decimal("0.19"), "MwSt.",
