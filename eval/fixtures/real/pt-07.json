@@ -125,11 +125,14 @@
     ],
     "line_items[7].unit_price": [
       "2.02"
+    ],
+    "tax": [
+      null
     ]
   },
   "expected_flags": [],
   "check_false_positives": [],
-  "notes": "Head-office address in the header is very faint; store address (or null) accepted too. Unit price isn't printed (qty 1), so null or the line amount are both fine. 'C'/'A' after qty are tax classes, not units. tax = 0.27 + 2.91.",
+  "notes": "Head-office address in the header is very faint; store address (or null) accepted too. Unit price isn't printed (qty 1), so null or the line amount are both fine. 'C'/'A' after qty are tax classes, not units. tax = 0.27 + 2.91. Accepted tax=null (decided by Vidit, 2026-11-11): the receipt prints tax per rate (0,27 + 2,91) but no total tax line; 3.18 is their sum, and the prompt forbids computing missing values.",
   "verified_by": "Vidit",
   "verified_at": "2026-11-10T06:14:24Z",
   "tax_breakdown_verified_by": "Vidit",

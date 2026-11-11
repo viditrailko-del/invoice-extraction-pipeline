@@ -48,7 +48,8 @@
   },
   "alternatives": {
     "vendor.name": [
-      "Sisters"
+      "Sisters",
+      "Sistels"
     ],
     "line_items[0].description": [
       "LENCO Ref:20E.010 Cor:UNICO Tamanho:TU"
@@ -59,7 +60,7 @@
   },
   "expected_flags": [],
   "check_false_positives": [],
-  "notes": "",
+  "notes": "Accepted vendor.name='Sistels' (decided by Vidit, 2026-11-11): the trading name printed at the top of the receipt.",
   "verified_by": "Vidit",
   "verified_at": "2026-11-10T06:16:52Z",
   "tax_breakdown_verified_by": "Vidit",
