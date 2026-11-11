@@ -72,7 +72,7 @@ tests/
 ## Data model
 
 - `invoices` — id, file_hash (unique), file_path, status (pending/processing/needs_review/approved/extraction_failed/rejected), extracted_json (LLM output, never modified), corrected_json (after human edits, null until first), attempts, processing_started_at, dup_key (indexed), created_at, updated_at. `Invoice.current_json` = corrected if any, else extracted
-- `extraction_runs` — invoice_id, raw_response, error, model, prompt_version, latency_ms, input/output tokens, cost_usd (column exists but is **not computed yet**; planned for Phase 5)
+- `extraction_runs` — invoice_id, raw_response, error, model, prompt_version, latency_ms, input/output tokens, cost_usd (from `app/extraction/pricing.py`; thinking tokens billed as output; unknown model → null, never 0)
 - `field_flags` — invoice_id, code (check id, e.g. `total_mismatch`, `duplicate`), field_path (e.g. `line_items[2].unit_price`), reason, severity, resolved, resolved_by, resolved_at, resolution_note
 - `corrections` — invoice_id, seq (identity: audit order), field_path, old_value, new_value, corrected_by, note, created_at. A rejection is a row with field_path `status`
 
@@ -95,11 +95,29 @@ tests/
 - Main model `gemini-3.5-flash`, fallback `gemini-3.5-flash-lite` (set in `.env` / `app/config.py`). ~3s per invoice.
 - `thinking_level="low"`: the default/high thinking took 80–160s for identical output. `minimal` is rejected by these models.
 - Newest models (e.g. `gemini-3.8-flash`) were frequently 503-overloaded. `gemini-2.5-*` returns 404 for new keys.
+- **Free tier: 20 requests/day for the main model.** Past that every call 429s and the fallback answers. `gemini-3.5-flash` is deprecated and Google routes it to `gemini-3.6-flash` (the 429 names 3.6).
+- `flash-lite` sometimes returns money as strings with thousands separators (`"1,400.00"`); validation rejects it and the retry usually fixes it.
 - `google-genai` is v3.x: verify its API in the container before assuming older docs apply.
 - Schema: `app/schemas/extraction.py` → passed as `response_json_schema`. Gemini returns money as JSON numbers; Pydantic turns them into `Decimal`; stored as strings.
 - Comparing `Decimal("1858.8") == 1858.8` is **False**. Always compare money to `Decimal("...")`, never float literals.
 - Extraction runs in FastAPI `BackgroundTasks` (`app/extraction/service.py`). `POST /invoices/{id}/retry` re-runs failed ones.
 - Generate a test invoice: `docker compose exec -T api uv run --frozen python scripts/make_sample_invoice.py storage/samples/x.pdf`
+
+## Eval harness (Phase 5)
+
+```bash
+docker compose run --rm -T api uv run --frozen python -m eval.run extract                 # real Gemini, ~38 calls
+docker compose run --rm -T api uv run --frozen python -m eval.run extract --only pt-02,syn-019 --model gemini-3.5-flash-lite --fallback-model ""
+docker compose run --rm -T api uv run --frozen python -m eval.run score latest            # offline re-score, free
+```
+
+- `app/extraction/core.py` `extract_invoice()` holds the retry/fallback/validation logic with no DB. It reports each call to a `RunRecorder`: `service.DbRecorder` writes `extraction_runs`, `eval.run.MemoryRecorder` writes `eval/results/<run_id>/raw/<id>.json` (gitignored). The eval therefore measures the exact production code.
+- `extract` freezes raw answers; `score` is pure and re-runnable. Change a metric or a check → re-score the same run, no API cost.
+- Scoring (`eval/scoring.py`): money ±0.01, discount by absolute value, dates/currency/bool exact, free text ignores case/spacing/punctuation/accents. `alternatives` accepted per field (not jointly: a mix of two valid readings can score correct while the checks flag it, e.g. pt-03). Line items aligned by position.
+- **Headline metric: unsafe approvals** = an invoice with a wrong *critical* field (or a planted problem) and zero flags. `CRITICAL` in `scoring.py` (money, dates, number, vendor name/tax id, currency, line amounts, line count).
+- Flags compared by `(code, field_path)` with `run_checks(inv, as_of)`; duplicates simulated in memory in id order. Unexpected flags on a wrong extraction count as useful, on a correct one as false alarms.
+- The report shows `Answered by` per model: a run where the fallback answered is not a measurement of the main model.
+- First run `20261111-045655-v2` (mixed: flash 15, flash-lite 23): synthetic 100% fields, 0 unsafe; real 97.2% fields, 2 unsafe approvals (pt-02 tax 2.71 vs 3.11: tax isn't checked on tax-included receipts; pt-09 vendor misread), 2 needless reviews (pt-03 mixed reading, pt-05 known check FP). ~$0.003/invoice.
 
 ## Eval fixtures (Phase 0)
 
@@ -149,7 +167,7 @@ Build in phase order. Don't add queues, auth, S3, or a frontend until the eval h
 | 2 | Gemini extraction + Pydantic validation + retry + raw storage | done |
 | 3 | Deterministic checks + flags + status | done |
 | 4 | Review endpoints: list flagged, PATCH corrections w/ audit | done |
-| 5 | Eval harness: field accuracy, flag precision/recall, cost/latency | todo |
+| 5 | Eval harness: field accuracy, flag precision/recall, cost/latency | done (harness + first run; main-model numbers blocked by free-tier quota) |
 | 6 | Hardening: logging, Dockerfile, README with real eval numbers | todo |
 
 Update the Status column when a phase is done.

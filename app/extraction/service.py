@@ -2,26 +2,20 @@
 
 process_invoice() is the whole Phase 2 job for one invoice:
 
-  1. Call the LLM. If it's overloaded/timeouts, retry with backoff, then try the
-     fallback model.                                  (transient failures)
-  2. Save EVERY call to extraction_runs, raw text first, before parsing.
-                                                      (never lose evidence)
-  3. Validate the answer with Pydantic. If it doesn't fit the schema, retry ONCE,
-     telling the model exactly what was wrong.        (bad output)
+  1-3. extraction/core.py: call the LLM (retry, fallback model), validate with
+     Pydantic (one retry with the error fed back). Every call is saved to
+     extraction_runs by DbRecorder, raw text first, before parsing.
   4. Anything still failing -> status=extraction_failed. Never crash.
   5. Run deterministic checks + duplicate detection -> field_flags.
      Zero flags -> approved. ANY flag (warning or error) -> needs_review.
 """
 
 import logging
-import time
 import uuid
 from collections.abc import Callable
 from datetime import date
-from functools import lru_cache
 from pathlib import Path
 
-from pydantic import ValidationError
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
@@ -30,33 +24,13 @@ from app.checks.duplicates import DUPLICATE_CODE, make_dup_key
 from app.checks.runner import run_checks
 from app.config import Settings
 from app.db.models import ExtractionRun, FieldFlag, Invoice, InvoiceStatus, Severity
-from app.extraction.client import Extractor, LLMError, LLMResponse
+from app.extraction.client import Extractor
+from app.extraction.core import Attempt, extract_invoice
 from app.schemas.extraction import ExtractedInvoice
 
 log = logging.getLogger(__name__)
 
-PROMPTS_DIR = Path(__file__).parent / "prompts"
-MAX_TRANSIENT_RETRIES = 2  # per model, so up to 3 calls each
-MAX_VALIDATION_RETRIES = 1
 MAX_JOB_ATTEMPTS = 3  # a file that kills the worker 3 times is given up on
-
-RETRY_FEEDBACK = """
-
-Your previous answer was rejected because it did not match the required schema.
-Errors:
-{errors}
-
-Return the corrected JSON for the same invoice. Follow the schema exactly."""
-
-
-@lru_cache
-def load_prompt(version: str) -> str:
-    return (PROMPTS_DIR / f"{version}.txt").read_text(encoding="utf-8")
-
-
-@lru_cache
-def response_schema() -> dict:
-    return ExtractedInvoice.model_json_schema()
 
 
 def process_invoice(
@@ -187,71 +161,41 @@ def recover_stuck_jobs(session_factory: Callable[[], Session]) -> list[uuid.UUID
     return to_run
 
 
+class DbRecorder:
+    """Saves every LLM call as an extraction_runs row, committed straight away."""
+
+    def __init__(self, db: Session, invoice: Invoice):
+        self._db = db
+        self._invoice = invoice
+        self._rows: dict[int, ExtractionRun] = {}
+
+    def record(self, attempt: Attempt) -> None:
+        row = ExtractionRun(invoice_id=self._invoice.id)
+        self._copy(attempt, row)
+        self._db.add(row)
+        self._db.commit()
+        self._rows[id(attempt)] = row
+
+    def update(self, attempt: Attempt) -> None:
+        self._copy(attempt, self._rows[id(attempt)])
+        self._db.commit()
+
+    @staticmethod
+    def _copy(a: Attempt, row: ExtractionRun) -> None:
+        row.model = a.model
+        row.prompt_version = a.prompt_version
+        row.raw_response = a.raw_response
+        row.error = a.error
+        row.latency_ms = a.latency_ms
+        row.input_tokens = a.input_tokens
+        row.output_tokens = a.output_tokens
+        row.cost_usd = a.cost_usd
+
+
 def _extract(
     db: Session, invoice: Invoice, extractor: Extractor, settings: Settings
 ) -> ExtractedInvoice | None:
     file_bytes = Path(invoice.file_path).read_bytes()
-    base_prompt = load_prompt(settings.prompt_version)
-    prompt = base_prompt
-
-    for _ in range(1 + MAX_VALIDATION_RETRIES):
-        result = _call_llm(db, invoice, extractor, settings, file_bytes, prompt)
-        if result is None:
-            return None  # every model/attempt failed at the API level
-        run, resp = result
-        try:
-            return ExtractedInvoice.model_validate_json(resp.text or "")
-        except ValidationError as e:
-            run.error = f"validation: {e}"[:4000]
-            db.commit()
-            prompt = base_prompt + RETRY_FEEDBACK.format(errors=_short_errors(e))
-    return None
-
-
-def _call_llm(
-    db: Session,
-    invoice: Invoice,
-    extractor: Extractor,
-    settings: Settings,
-    file_bytes: bytes,
-    prompt: str,
-) -> tuple[ExtractionRun, LLMResponse] | None:
-    models = [m for m in (settings.gemini_model, settings.gemini_fallback_model) if m]
-    for model in models:
-        for attempt in range(1 + MAX_TRANSIENT_RETRIES):
-            run = ExtractionRun(
-                invoice_id=invoice.id, model=model, prompt_version=settings.prompt_version
-            )
-            db.add(run)
-            try:
-                resp = extractor.generate(
-                    file_bytes=file_bytes,
-                    mime_type=invoice.content_type,
-                    prompt=prompt,
-                    schema=response_schema(),
-                    model=model,
-                )
-            except LLMError as e:
-                run.error = str(e)[:4000]
-                run.latency_ms = e.latency_ms
-                db.commit()
-                if not e.transient:
-                    break  # e.g. bad request: same model won't fix it, try the fallback
-                if attempt < MAX_TRANSIENT_RETRIES:
-                    time.sleep(settings.llm_retry_backoff_s * (2**attempt))
-                continue
-
-            run.raw_response = resp.text
-            run.latency_ms = resp.latency_ms
-            run.input_tokens = resp.input_tokens
-            run.output_tokens = resp.output_tokens
-            db.commit()  # raw output is saved before we even try to parse it
-            return run, resp
-    return None
-
-
-def _short_errors(e: ValidationError) -> str:
-    return "\n".join(
-        f"- {'.'.join(str(p) for p in err['loc']) or '(root)'}: {err['msg']}"
-        for err in e.errors()[:20]
+    return extract_invoice(
+        file_bytes, invoice.content_type, extractor, settings, DbRecorder(db, invoice)
     )

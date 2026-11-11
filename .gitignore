@@ -9,3 +9,6 @@ CLAUDE.local.md
 
 # Real eval images: fetched from Zenodo by scripts/fetch_real_fixtures.py, never committed
 eval/fixtures/real/files/
+
+# Eval results: raw LLM answers per run, regenerate with `python -m eval.run extract`
+eval/results/

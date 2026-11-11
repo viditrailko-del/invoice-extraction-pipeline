@@ -28,6 +28,7 @@ class LLMResponse:
     latency_ms: int
     input_tokens: int | None = None
     output_tokens: int | None = None
+    thinking_tokens: int | None = None  # billed as output, but not in output_tokens
 
 
 class LLMError(Exception):
@@ -100,6 +101,7 @@ class GeminiExtractor:
             latency_ms=_ms_since(start),
             input_tokens=usage.prompt_token_count if usage else None,
             output_tokens=usage.candidates_token_count if usage else None,
+            thinking_tokens=usage.thoughts_token_count if usage else None,
         )
 
 
