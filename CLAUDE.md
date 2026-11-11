@@ -25,6 +25,7 @@ Upload (POST /invoices)
 - SQLAlchemy 2.0 (typed `Mapped[]` style) + Alembic migrations
 - Postgres 16 via `docker-compose`
 - `google-genai` SDK (Gemini)
+- `python-stdnum` (tax ID check digits)
 - pytest
 
 ## Commands
@@ -98,6 +99,7 @@ tests/
 - **Free tier: 20 requests/day for the main model.** Past that every call 429s and the fallback answers. A per-day 429 is non-transient (`client.is_transient`): it skips straight to the fallback, while a per-minute 429 (limit 5) is still retried. `gemini-3.5-flash` is deprecated and Google routes it to `gemini-3.6-flash` (the 429 names 3.6).
 - `flash-lite` sometimes returns money as strings with thousands separators (`"1,400.00"`); validation rejects it and the retry usually fixes it.
 - `google-genai` is v3.x: verify its API in the container before assuming older docs apply.
+- Re-scoring an old eval run after regenerating fixtures compares old answers with changed documents (e.g. new tax IDs): run `extract` again instead.
 - Schema: `app/schemas/extraction.py` → passed as `response_json_schema`. Gemini returns money as JSON numbers; Pydantic turns them into `Decimal`; stored as strings.
 - Comparing `Decimal("1858.8") == 1858.8` is **False**. Always compare money to `Decimal("...")`, never float literals.
 - Extraction runs in FastAPI `BackgroundTasks` (`app/extraction/service.py`). `POST /invoices/{id}/retry` re-runs failed ones.
@@ -149,7 +151,8 @@ docker compose run --rm -T api uv run --frozen python -m eval.run score latest  
 - Checks live in `app/checks/` (`required`, `arithmetic`, `dates`, `tax`, `tax_id`), are collected by `runner.run_checks(inv, today)`, and return `checks.base.Flag`. `today` is a parameter so checks stay pure. Duplicate detection needs the DB, so it runs in `service.py`, not the runner.
 - Total check accepts the discount printed as positive or negative, and the subtotal given before or after the discount; it flags only when none of these readings adds up. Line math rounds half-up to cents.
 - **Tax breakdown** (`app/checks/tax.py`): `tax_breakdown` = one row per tax rate (`rate` in percent, `base`, `amount`; null when not printed). `tax_line_math`: base × rate ≠ row amount. `tax_breakdown_mismatch`: rows don't sum to `tax`. `tax_base_mismatch`: bases + tax ≠ total (holds for tax added and included). Each runs only when its numbers are present. Added because pt-02's smudged 23% row (2,96 read as 2,56) passed every other check.
-- **Vendor tax ID** (`app/checks/tax_id.py`): `tax_id_invalid` when a Portuguese NIF fails its mod-11 check digit (catches pt-02's 501419926 read as 501415926). Applies only with evidence on the document: `PT` prefix, a `NNNN-NNN` postcode or "Portugal" in the vendor address. Never from currency: UK VAT without "GB" or a French SIREN are also 9 digits. Synthetic NIFs must be valid (generator uses `PT509876544`).
+- **Vendor tax ID** (`app/checks/tax_id.py`): `tax_id_invalid` when the vendor's tax ID fails its check digit (caught pt-02's NIF 501419926 read as 501415926). The per-country rules come from **python-stdnum** (EU VAT, UK VAT, PT NIF, IN GSTIN/PAN, NO, CA BN, FR SIREN...); our code only picks which rules apply, from evidence on the document: a country prefix on the ID, else one country named in the vendor address (or a PT `NNNN-NNN` postcode). Never from currency. Only a failed **checksum** is flagged; an unrecognized format is skipped (could be another kind of ID). US EIN has no check digit → never flagged. Add a country by extending `_MODULES_BY_COUNTRY` / `_COUNTRY_WORDS`.
+- Synthetic tax IDs are fake but must be **valid** (correct check digits); otherwise the generator's self-check fails.
 - **Tax added vs included** varies by document type, not just country (US and B2B invoices add tax; EU shop receipts include it). The extracted field `prices_include_tax` decides: `false` → total = base − discount + tax; `true` → total = base − discount; `null` → accept either. Never infer it from the country. On tax-included receipts the tax base ("Base Imp.") is not the subtotal.
 - **Review (Phase 4, `app/review/`):** `PATCH /invoices/{id}` applies all changes or none. The result is validated against `ExtractedInvoice`, each changed field appends a `corrections` row, the checks re-run, and status is recomputed (no open flags → approved). `POST .../flags/{flag_id}/resolve` = a human accepts a flagged value. `POST .../reject` is final. `GET .../corrections` returns the audit trail.
 - On re-check, a flag's identity is `(code, field_path, reason)`. Problem gone → resolved by `system:recheck` (never deleted). A problem a human already resolved is not raised again. Changing vendor or invoice number re-runs duplicate detection.

@@ -67,30 +67,32 @@ class Vendor:
     rates: tuple[Decimal, ...] = ()
 
 
+# Tax IDs are fake but VALID (correct check digits, made with python-stdnum):
+# checks.tax_id would flag an invalid one, which no real vendor prints.
 VENDORS = {
     "uk": Vendor("Northwind Cloud Services Ltd.", ("12 Harbour Street", "Bristol BS1 4XY, United Kingdom"),
-                 "VAT No", "GB123456789", "GBP", "£", False, "en", "dmy", Decimal("0.20"), "VAT 20%",
+                 "VAT No", "GB123456727", "GBP", "£", False, "en", "dmy", Decimal("0.20"), "VAT 20%",
                  "en", "NW-{y}-{n:04d}", "cloud"),
     "us": Vendor("Brightline Design Studio LLC", ("480 Mission Street, Suite 300", "San Francisco, CA 94105, USA"),
                  "EIN", "94-3812775", "USD", "$", False, "en", "mdy", Decimal("0.0875"), "Sales tax 8.75%",
                  "en", "INV{n:06d}", "design"),
     "de": Vendor("Kessler Maschinenbau GmbH", ("Industriestraße 14", "70565 Stuttgart, Deutschland"),
-                 "USt-IdNr.", "DE287451903", "EUR", "€", True, "eu", "dmy_dot", Decimal("0.19"), "MwSt. 19%",
+                 "USt-IdNr.", "DE287451900", "EUR", "€", True, "eu", "dmy_dot", Decimal("0.19"), "MwSt. 19%",
                  "de", "RE-{y}{n:05d}", "machinery"),
     "in": Vendor("Sahyadri Software Solutions Pvt Ltd", ("Plot 22, Hinjewadi Phase 2", "Pune 411057, Maharashtra, India"),
-                 "GSTIN", "27AABCS1429B1Z5", "INR", "Rs.", False, "in", "dmy", Decimal("0.18"), "GST 18%",
+                 "GSTIN", "27AABCS1429B1ZU", "INR", "Rs.", False, "in", "dmy", Decimal("0.18"), "GST 18%",
                  "en", "SSS/{yy}-{yy1}/{n:03d}", "software_in"),
     "fr": Vendor("Atelier Lumière SARL", ("8 Rue des Lilas", "69003 Lyon, France"),
                  "N° TVA", "FR40303265045", "EUR", "€", True, "eu_space", "dmy", Decimal("0.20"), "TVA 20%",
                  "fr", "F{y}/{n:04d}", "studio_fr"),
     "ca": Vendor("Maple Leaf Logistics Inc.", ("220 King St W", "Toronto, ON M5H 1K4, Canada"),
-                 "GST/HST No", "123456789RT0001", "CAD", "CA$", False, "en", "iso", Decimal("0.13"), "HST 13%",
+                 "GST/HST No", "123456782RT0001", "CAD", "CA$", False, "en", "iso", Decimal("0.13"), "HST 13%",
                  "en", "MLL-{n:05d}", "logistics"),
     "us_notax": Vendor("Harbor & Pine Consulting", ("77 Pine Avenue", "Portland, OR 97204, USA"),
                        None, None, "USD", "$", False, "en", "long", ZERO, None,
                        "en", "HP-{y}-{n:03d}", "consulting"),
     "no": Vendor("Nordlys Data AS", ("Karl Johans gate 5", "0154 Oslo, Norway"),
-                 "Org.nr", "NO987654321MVA", "NOK", "kr", False, "eu_space", "dmy_dot", Decimal("0.25"), "MVA 25%",
+                 "Org.nr", "NO987654325MVA", "NOK", "kr", False, "eu_space", "dmy_dot", Decimal("0.25"), "MVA 25%",
                  "en", "{n:05d}", "data_no"),
     # multi-rate: a Portuguese shop receipt (tax included) and a German B2B food
     # wholesaler (tax added), each printing a tax table
@@ -98,7 +100,7 @@ VENDORS = {
                  "NIF", "PT509876544", "EUR", "€", True, "eu", "dmy", Decimal("0.23"), "IVA",
                  "pt", "FS {y}/{n:05d}", "grocery_pt", rates=(Decimal("0.23"), Decimal("0.06"))),
     "de_mixed": Vendor("Rheinland Gastro-Großhandel GmbH", ("Hafenstraße 9", "50678 Köln, Deutschland"),
-                       "USt-IdNr.", "DE314159265", "EUR", "€", True, "eu", "dmy_dot", Decimal("0.19"), "MwSt.",
+                       "USt-IdNr.", "DE314159262", "EUR", "€", True, "eu", "dmy_dot", Decimal("0.19"), "MwSt.",
                        "de", "GH-{y}-{n:05d}", "food_de", rates=(Decimal("0.19"), Decimal("0.07"))),
 }
 
