@@ -46,6 +46,13 @@
     ],
     "subtotal": "2149.55",
     "tax": "408.41",
+    "tax_breakdown": [
+      {
+        "rate": "20",
+        "base": null,
+        "amount": "408.41"
+      }
+    ],
     "discount": "-107.48",
     "total": "2450.48",
     "prices_include_tax": false

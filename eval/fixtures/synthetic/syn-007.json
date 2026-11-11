@@ -40,6 +40,7 @@
     ],
     "subtotal": "5725.42",
     "tax": null,
+    "tax_breakdown": [],
     "discount": null,
     "total": "5725.42",
     "prices_include_tax": null

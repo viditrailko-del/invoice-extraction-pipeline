@@ -37,8 +37,13 @@ HEADER_FIELDS = (
 )
 LINE_FIELDS = ("description", "quantity", "unit_price", "amount")
 LINE_COUNT = "line_items.count"
+# List fields scored row by row, matched by position: list name -> fields of a row.
+LISTS = {
+    "line_items": LINE_FIELDS,
+    "tax_breakdown": ("rate", "base", "amount"),
+}
 
-NUMERIC = {"subtotal", "tax", "discount", "total", "quantity", "unit_price", "amount"}
+NUMERIC = {"subtotal", "tax", "discount", "total", "quantity", "unit_price", "amount", "rate", "base"}
 EXACT = {"invoice_date", "due_date", "currency", "prices_include_tax"}
 
 # Wrong values here change what gets paid, to whom, or when. A wrong one must never be
@@ -57,6 +62,8 @@ CRITICAL = {
     "total",
     "line_items[].amount",
     LINE_COUNT,
+    # tax_breakdown rows are scored but not critical: they exist to verify `tax`,
+    # which is.
 }
 
 Outcome = Literal["correct", "wrong", "missing", "hallucinated", "failed"]
@@ -148,13 +155,23 @@ def get_path(data: dict[str, Any], path: str) -> Any:
 def score_fields(
     expected: dict[str, Any], actual: dict[str, Any] | None, alternatives: dict[str, list[Any]]
 ) -> list[FieldResult]:
-    """Score every header field, every line item field (matched by position), and the
-    line count. A failed extraction (actual=None) scores every field as 'failed'."""
-    exp_lines = expected.get("line_items") or []
-    act_lines = (actual or {}).get("line_items") or []
-    paths = list(HEADER_FIELDS) + [
-        f"line_items[{i}].{f}" for i in range(max(len(exp_lines), len(act_lines))) for f in LINE_FIELDS
-    ]
+    """Score every header field, every row of each list (matched by position), and each
+    list's row count. A failed extraction (actual=None) scores every field as 'failed'.
+
+    A list missing from the label (not `[]`, absent) isn't labeled yet and is skipped:
+    e.g. tax_breakdown on real receipts labeled before prompt v3.
+    """
+    paths = list(HEADER_FIELDS)
+    counts = []
+    for name, row_fields in LISTS.items():
+        if name not in expected:
+            continue
+        exp_rows = expected[name] or []
+        act_rows = (actual or {}).get(name) or []
+        paths += [
+            f"{name}[{i}].{f}" for i in range(max(len(exp_rows), len(act_rows))) for f in row_fields
+        ]
+        counts.append((f"{name}.count", len(exp_rows), len(act_rows)))
 
     results = []
     for path in paths:
@@ -165,10 +182,9 @@ def score_fields(
             results.append(
                 score_field(path, exp_value, get_path(actual, path), alternatives.get(path, []))
             )
-    count_outcome: Outcome = (
-        "failed" if actual is None else "correct" if len(exp_lines) == len(act_lines) else "wrong"
-    )
-    results.append(FieldResult(LINE_COUNT, count_outcome, len(exp_lines), len(act_lines)))
+    for path, n_exp, n_act in counts:
+        outcome: Outcome = "failed" if actual is None else "correct" if n_exp == n_act else "wrong"
+        results.append(FieldResult(path, outcome, n_exp, n_act))
     return results
 
 

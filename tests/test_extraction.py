@@ -52,7 +52,7 @@ def test_raw_response_saved_with_metadata(client, db):
     [run] = runs(db)
     assert run.raw_response == VALID_JSON
     assert run.model == "main-model"
-    assert run.prompt_version == "v2"
+    assert run.prompt_version == "v3"
     assert run.input_tokens == 100 and run.output_tokens == 50
     assert run.error is None
 

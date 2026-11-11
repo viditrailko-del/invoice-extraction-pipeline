@@ -62,6 +62,9 @@ class Vendor:
     lang: str  # en | de | fr
     number_fmt: str  # format for the invoice number
     catalog: str
+    # Several tax rates (e.g. 23% and 6%): each line has its own rate and the document
+    # prints a tax table (rate / base / tax per row). Empty = the single `tax_rate`.
+    rates: tuple[Decimal, ...] = ()
 
 
 VENDORS = {
@@ -89,6 +92,14 @@ VENDORS = {
     "no": Vendor("Nordlys Data AS", ("Karl Johans gate 5", "0154 Oslo, Norway"),
                  "Org.nr", "NO987654321MVA", "NOK", "kr", False, "eu_space", "dmy_dot", Decimal("0.25"), "MVA 25%",
                  "en", "{n:05d}", "data_no"),
+    # multi-rate: a Portuguese shop receipt (tax included) and a German B2B food
+    # wholesaler (tax added), each printing a tax table
+    "pt": Vendor("Mercearia Flor do Mondego, Lda.", ("Rua Ferreira Borges 41", "3000-180 Coimbra, Portugal"),
+                 "NIF", "PT509876543", "EUR", "€", True, "eu", "dmy", Decimal("0.23"), "IVA",
+                 "pt", "FS {y}/{n:05d}", "grocery_pt", rates=(Decimal("0.23"), Decimal("0.06"))),
+    "de_mixed": Vendor("Rheinland Gastro-Großhandel GmbH", ("Hafenstraße 9", "50678 Köln, Deutschland"),
+                       "USt-IdNr.", "DE314159265", "EUR", "€", True, "eu", "dmy_dot", Decimal("0.19"), "MwSt.",
+                       "de", "GH-{y}-{n:05d}", "food_de", rates=(Decimal("0.19"), Decimal("0.07"))),
 }
 
 BUYERS = [
@@ -133,21 +144,41 @@ CATALOG: dict[str, list[tuple[str, str, tuple[int, int], tuple[str, str]]]] = {
     "data_no": [("Data pipeline subscription", "int", (1, 1), ("4500", "9800")),
                 ("Analytics seats", "int", (5, 40), ("290", "450")),
                 ("Onboarding", "int", (1, 1), ("6500", "12000"))],
+    # multi-rate catalogs: the item's rate is in RATE_OF (index into Vendor.rates)
+    "grocery_pt": [("Detergente roupa 3L", "int", (1, 2), ("6.49", "9.99")),
+                   ("Pilhas AA (pack 4)", "int", (1, 2), ("3.99", "5.49")),
+                   ("Pão de forma", "int", (1, 3), ("1.29", "2.19")),
+                   ("Leite meio-gordo 1L", "int", (2, 6), ("0.79", "0.99")),
+                   ("Azeite virgem extra 0,75L", "int", (1, 2), ("5.99", "8.49"))],
+    "food_de": [("Spülmaschinentabs (200 St.)", "int", (1, 4), ("24.90", "39.90")),
+                ("Mineralwasser Kiste 12x1L", "int", (5, 30), ("4.20", "6.80")),
+                ("Kaffeebohnen 1 kg", "int", (2, 12), ("14.50", "22.90")),
+                ("Weizenmehl Type 405, 25 kg", "int", (1, 6), ("17.80", "26.40"))],
+}
+RATE_OF = {  # 0 = standard rate, 1 = reduced rate
+    "Detergente roupa 3L": 0, "Pilhas AA (pack 4)": 0, "Pão de forma": 1,
+    "Leite meio-gordo 1L": 1, "Azeite virgem extra 0,75L": 1,
+    "Spülmaschinentabs (200 St.)": 0, "Mineralwasser Kiste 12x1L": 0,
+    "Kaffeebohnen 1 kg": 1, "Weizenmehl Type 405, 25 kg": 1,
 }
 
 LABELS = {
     "en": dict(invoice="INVOICE", credit="CREDIT NOTE", number="Invoice #", date="Date", due="Due",
                bill_to="Bill to", desc="Description", qty="Qty", unit="Unit price", amount="Amount",
                subtotal="Subtotal", discount="Discount", total="Total due", cont="(continued)",
-               incl="Includes {}"),
+               incl="Includes {}", rate="Rate", base="Net", tax_amt="Tax"),
+    "pt": dict(invoice="FATURA SIMPLIFICADA", credit="NOTA DE CRÉDITO", number="N.º", date="Data", due="Vencimento",
+               bill_to="Cliente", desc="Descrição", qty="Qtd", unit="Preço", amount="Valor",
+               subtotal="Subtotal", discount="Desconto", total="Total", cont="(continuação)",
+               incl="IVA incluído", rate="Taxa", base="Base", tax_amt="IVA"),
     "de": dict(invoice="RECHNUNG", credit="GUTSCHRIFT", number="Rechnungsnr.", date="Datum", due="Fällig am",
                bill_to="Rechnung an", desc="Beschreibung", qty="Menge", unit="Einzelpreis", amount="Betrag",
                subtotal="Zwischensumme", discount="Rabatt", total="Gesamtbetrag", cont="(Fortsetzung)",
-               incl="enthaltene {}"),
+               incl="enthaltene {}", rate="Satz", base="Netto", tax_amt="MwSt."),
     "fr": dict(invoice="FACTURE", credit="AVOIR", number="N° de facture", date="Date", due="Échéance",
                bill_to="Facturé à", desc="Désignation", qty="Qté", unit="Prix unitaire", amount="Montant",
                subtotal="Sous-total HT", discount="Remise", total="Total TTC", cont="(suite)",
-               incl="dont {}"),
+               incl="dont {}", rate="Taux", base="Base HT", tax_amt="TVA"),
 }
 MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August",
           "September", "October", "November", "December"]
@@ -162,6 +193,20 @@ class Line:
     quantity: Decimal
     unit_price: Decimal
     amount: Decimal
+    rate: Decimal | None = None  # multi-rate vendors only; not an extracted field
+
+
+@dataclass
+class TaxRow:
+    rate: Decimal  # fraction: 0.23
+    base: Decimal | None  # None = not printed (single-rate docs show only "VAT 20%: x")
+    amount: Decimal
+
+
+def pct(rate: Decimal) -> Decimal:
+    """0.23 -> 23, 0.0875 -> 8.75 (as printed; never '2E+1')."""
+    p = rate * 100
+    return p.quantize(Decimal(1)) if p == p.to_integral() else p.normalize()
 
 
 @dataclass
@@ -180,6 +225,11 @@ class Inv:
     discount: Decimal | None = None  # as printed, sign included
     tax: Decimal | None = None
     total: Decimal = ZERO
+    tax_rows: list[TaxRow] | None = None
+
+    @property
+    def multi_rate(self) -> bool:
+        return len(self.vendor.rates) > 1
 
     def expected(self) -> dict:
         """The answer key, validated by the same schema Gemini must satisfy."""
@@ -191,9 +241,16 @@ class Inv:
             "vendor": {"name": v.name, "address": ", ".join(v.address), "tax_id": v.tax_id},
             "bill_to_name": self.bill_to,
             "currency": v.currency,
-            "line_items": [l.__dict__ for l in self.lines],
+            "line_items": [
+                {"description": l.description, "quantity": l.quantity,
+                 "unit_price": l.unit_price, "amount": l.amount}
+                for l in self.lines
+            ],
             "subtotal": self.subtotal,
             "tax": self.tax,
+            "tax_breakdown": [
+                {"rate": pct(r.rate), "base": r.base, "amount": r.amount} for r in self.tax_rows or []
+            ],
             "discount": self.discount,
             "total": self.total,
             # no tax shown -> null; otherwise what the document's layout states
@@ -204,6 +261,9 @@ class Inv:
 def compute_totals(inv: Inv, subtotal: Decimal | None = None) -> None:
     """Totals the way the vendor's software would. `subtotal` overrides the sum
     (used to plant a vendor whose subtotal is wrong but everything after is consistent)."""
+    if inv.multi_rate:
+        compute_multi_rate_totals(inv)
+        return
     base = subtotal if subtotal is not None else sum((l.amount for l in inv.lines), ZERO)
     disc = to_cents(base * inv.discount_pct / 100) if inv.discount_pct else ZERO
     inv.discount = (-disc if inv.negative_discount else disc) if inv.discount_pct else None
@@ -217,6 +277,33 @@ def compute_totals(inv: Inv, subtotal: Decimal | None = None) -> None:
         inv.subtotal = base
         inv.tax = to_cents((base - disc) * rate) if rate else None
         inv.total = base - disc + (inv.tax or ZERO)
+    # The tax name carries the rate ("VAT 20%"), so the document shows one rate row
+    # with its amount but no separate base.
+    inv.tax_rows = [TaxRow(rate, None, inv.tax)] if inv.tax is not None else []
+
+
+def compute_multi_rate_totals(inv: Inv) -> None:
+    """One tax row per rate, computed per rate group like till software does.
+    Included: the row's gross is split into base + tax. Added: tax on the net base."""
+    assert not inv.discount_pct, "discounts on multi-rate documents aren't modeled"
+    rows = []
+    for rate in inv.vendor.rates:
+        group = sum((l.amount for l in inv.lines if l.rate == rate), ZERO)
+        if not group:
+            continue
+        if inv.tax_inclusive:
+            tax = to_cents(group * rate / (1 + rate))
+            rows.append(TaxRow(rate, group - tax, tax))
+        else:
+            rows.append(TaxRow(rate, group, to_cents(group * rate)))
+    inv.tax_rows = rows
+    inv.tax = sum((r.amount for r in rows), ZERO)
+    lines_sum = sum((l.amount for l in inv.lines), ZERO)
+    inv.discount = None
+    if inv.tax_inclusive:
+        inv.subtotal, inv.total = None, lines_sum
+    else:
+        inv.subtotal, inv.total = lines_sum, lines_sum + inv.tax
 
 
 def unambiguous(d: date, step: int = 1) -> date:
@@ -230,8 +317,11 @@ def build(spec: "Spec", rng: random.Random) -> Inv:
     v = VENDORS[spec.vendor]
     issued = unambiguous(AS_OF - timedelta(days=rng.randint(5, 120)), step=-1)
     lines = []
-    for _ in range(spec.n_lines):
-        desc, kind, (qlo, qhi), (plo, phi) = rng.choice(CATALOG[v.catalog])
+    for k in range(spec.n_lines):
+        items = CATALOG[v.catalog]
+        if len(v.rates) > 1:  # alternate standard / reduced items so both rates appear
+            items = [it for it in items if RATE_OF[it[0]] == k % 2]
+        desc, kind, (qlo, qhi), (plo, phi) = rng.choice(items)
         qty = Decimal(rng.randint(qlo, qhi)) if kind == "int" else Decimal(rng.randint(2 * qlo, 2 * qhi)) / 2
         price = Decimal(rng.randint(int(Decimal(plo) * 100), int(Decimal(phi) * 100))) / 100
         if price >= 1000:
@@ -240,7 +330,8 @@ def build(spec: "Spec", rng: random.Random) -> Inv:
         if spec.credit_note:
             qty = -qty
         month = MONTHS[(issued.month - 2) % 12]
-        lines.append(Line(desc.format(month=month), qty, price, to_cents(qty * price)))
+        rate = v.rates[RATE_OF[desc]] if len(v.rates) > 1 else None
+        lines.append(Line(desc.format(month=month), qty, price, to_cents(qty * price), rate))
     n = rng.randint(1, 9999)
     number = v.number_fmt.format(y=issued.year, yy=issued.year % 100, yy1=issued.year % 100 + 1, n=n)
     inv = Inv(
@@ -282,6 +373,14 @@ def plant_tax_twice(inv: Inv, rng: random.Random) -> None:
     inv.total += inv.tax or ZERO  # tax-included prices, but tax added on top again
 
 
+def plant_tax_row(inv: Inv, rng: random.Random) -> None:
+    """Like pt-02's smudge, but on the paper: the first tax row's amount is 0.40 short
+    and the printed tax total was summed from the wrong row. Lines and total are right."""
+    assert inv.tax_rows and inv.tax_rows[0].base is not None
+    inv.tax_rows[0].amount -= Decimal("0.40")
+    inv.tax = sum((r.amount for r in inv.tax_rows), ZERO)
+
+
 def plant_due_before(inv: Inv, rng: random.Random) -> None:
     inv.due = unambiguous(inv.issued - timedelta(days=20), step=-1)
 
@@ -296,14 +395,17 @@ def plant_no_number(inv: Inv, rng: random.Random) -> None:
     inv.number = None
 
 
-PLANTS: dict[str, tuple[Callable[[Inv, random.Random], None], str]] = {
-    "line_math": (plant_line_math, "line_math"),
-    "subtotal": (plant_subtotal, "subtotal_mismatch"),
-    "total": (plant_total, "total_mismatch"),
-    "tax_twice": (plant_tax_twice, "total_mismatch"),
-    "due_before": (plant_due_before, "due_before_invoice"),
-    "old_date": (plant_old_date, "date_implausible"),
-    "no_number": (plant_no_number, "missing_field"),
+# plant name -> (mutation, check codes it must trigger)
+PLANTS: dict[str, tuple[Callable[[Inv, random.Random], None], frozenset[str]]] = {
+    "line_math": (plant_line_math, frozenset({"line_math"})),
+    "subtotal": (plant_subtotal, frozenset({"subtotal_mismatch"})),
+    "total": (plant_total, frozenset({"total_mismatch"})),
+    "tax_twice": (plant_tax_twice, frozenset({"total_mismatch"})),
+    # one wrong row breaks its own math AND bases + tax no longer reach the total
+    "tax_row": (plant_tax_row, frozenset({"tax_line_math", "tax_base_mismatch"})),
+    "due_before": (plant_due_before, frozenset({"due_before_invoice"})),
+    "old_date": (plant_old_date, frozenset({"date_implausible"})),
+    "no_number": (plant_no_number, frozenset({"missing_field"})),
 }
 
 
@@ -366,8 +468,24 @@ class Layout:
     def render(self) -> None:
         y = self.header()
         y = self.table(y)
-        self.totals(y)
+        y = self.totals(y)
+        if self.inv.multi_rate:
+            self.tax_table(y - 14)
         self.footer()
+
+    def tax_table(self, y: float) -> None:
+        """The till-receipt tax summary: one row per rate with base and tax."""
+        c, L, s = self.c, self.L, self.v.number_style
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(300, y, L["rate"])
+        c.drawRightString(450, y, L["base"])
+        c.drawRightString(545, y, L["tax_amt"])
+        c.setFont("Helvetica", 9)
+        for row in self.inv.tax_rows or []:
+            y -= 14
+            c.drawString(300, y, f"{self.v.tax_name} {fmt_num(pct(row.rate), s, places=0)}%")
+            c.drawRightString(450, y, fmt_num(row.base, s) if row.base is not None else "")
+            c.drawRightString(545, y, fmt_num(row.amount, s))
 
     def title(self) -> str:
         return self.L["credit"] if self.inv.credit_note else self.L["invoice"]
@@ -417,13 +535,14 @@ class Layout:
             rows.append((self.L["incl"].format(v.tax_name), fmt_num(inv.tax, s), False))
         return rows
 
-    def totals(self, y: float) -> None:
+    def totals(self, y: float) -> float:
         c = self.c
         for label, value, bold in self.total_rows():
             c.setFont("Helvetica-Bold" if bold else "Helvetica", 11 if bold else 10)
             c.drawRightString(450, y, label)
             c.drawRightString(545, y, value)
             y -= 16
+        return y
 
     def footer(self) -> None:
         pass
@@ -512,11 +631,11 @@ class Band(Layout):
             self.c.setFillColorRGB(0, 0, 0)
         super().row(y, i, line)
 
-    def totals(self, y: float) -> None:
+    def totals(self, y: float) -> float:
         rows = self.total_rows()
         self.c.setStrokeColorRGB(0.12, 0.23, 0.42)
         self.c.rect(300, y - 16 * len(rows) + 6, 250, 16 * len(rows) + 6, stroke=1, fill=0)
-        super().totals(y)
+        return super().totals(y)
 
 
 class Minimal(Layout):
@@ -643,6 +762,13 @@ SPECS = [
     Spec("syn-027", "de", "band", 4, fmt="scan", tax_inclusive=True, note="German, inkl. MwSt., scanned"),
     Spec("syn-028", "fr", "classic", 3, tax_inclusive=True, plant=("tax_twice",),
          note="TVA included, but added to the total again"),
+    # several tax rates with a printed tax table (rate / base / tax per row)
+    Spec("syn-029", "pt", "minimal", 5, tax_inclusive=True, no_due=True, no_bill_to=True,
+         note="Portuguese receipt, IVA 23% + 6% table, prices include tax"),
+    Spec("syn-030", "de_mixed", "classic", 4, note="German B2B, MwSt. 19% + 7% table, tax added"),
+    # (not "band": its big title overprints a long vendor name)
+    Spec("syn-031", "pt", "classic", 4, fmt="scan", tax_inclusive=True, no_due=True, no_bill_to=True,
+         plant=("tax_row",), note="scanned receipt, 23% row's IVA 0.40 short (like pt-02's smudge)"),
 ]
 
 
@@ -666,7 +792,7 @@ def make_fixture(spec: Spec) -> dict:
 
     # Self-check 1: the real checks must raise exactly the planted problems.
     flags = run_checks(ExtractedInvoice.model_validate(expected), AS_OF)
-    planted_codes = {PLANTS[p][1] for p in (SPECS_BY_ID.get(spec.duplicate_of, spec).plant)}
+    planted_codes = {c for p in SPECS_BY_ID.get(spec.duplicate_of, spec).plant for c in PLANTS[p][1]}
     if inv.credit_note:
         planted_codes.add("negative_amount")
     got = {f.code for f in flags}
@@ -676,6 +802,10 @@ def make_fixture(spec: Spec) -> dict:
     pdf = render_pdf(inv, layout)
     text = pdf_text(pdf)
     must_appear = [fmt_money(inv.total, inv.vendor), inv.vendor.name]
+    if inv.multi_rate:  # every tax-table number the label claims is printed
+        s = inv.vendor.number_style
+        for row in inv.tax_rows or []:
+            must_appear += [fmt_num(row.base, s), fmt_num(row.amount, s), f"{fmt_num(pct(row.rate), s, places=0)}%"]
     if inv.number:
         must_appear.append(inv.number)
     for s in must_appear:

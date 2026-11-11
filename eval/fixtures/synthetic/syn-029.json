@@ -1,0 +1,72 @@
+{
+  "id": "syn-029",
+  "file": "syn-029.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "Portuguese receipt, IVA 23% + 6% table, prices include tax",
+  "layout": "minimal",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "FS 2026/00169",
+    "invoice_date": "2026-10-14",
+    "due_date": null,
+    "vendor": {
+      "name": "Mercearia Flor do Mondego, Lda.",
+      "address": "Rua Ferreira Borges 41, 3000-180 Coimbra, Portugal",
+      "tax_id": "PT509876543"
+    },
+    "bill_to_name": null,
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "Detergente roupa 3L",
+        "quantity": "2",
+        "unit_price": "7.45",
+        "amount": "14.90"
+      },
+      {
+        "description": "Leite meio-gordo 1L",
+        "quantity": "2",
+        "unit_price": "0.93",
+        "amount": "1.86"
+      },
+      {
+        "description": "Detergente roupa 3L",
+        "quantity": "1",
+        "unit_price": "8.56",
+        "amount": "8.56"
+      },
+      {
+        "description": "Azeite virgem extra 0,75L",
+        "quantity": "1",
+        "unit_price": "6.74",
+        "amount": "6.74"
+      },
+      {
+        "description": "Detergente roupa 3L",
+        "quantity": "1",
+        "unit_price": "7.15",
+        "amount": "7.15"
+      }
+    ],
+    "subtotal": null,
+    "tax": "6.21",
+    "tax_breakdown": [
+      {
+        "rate": "23",
+        "base": "24.89",
+        "amount": "5.72"
+      },
+      {
+        "rate": "6",
+        "base": "8.11",
+        "amount": "0.49"
+      }
+    ],
+    "discount": null,
+    "total": "39.21",
+    "prices_include_tax": true
+  },
+  "expected_flags": []
+}

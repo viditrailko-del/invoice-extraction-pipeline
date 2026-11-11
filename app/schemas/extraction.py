@@ -36,6 +36,23 @@ class LineItem(BaseModel):
     amount: Money | None = Field(None, description="Line total exactly as printed")
 
 
+class TaxLine(BaseModel):
+    """One row of the document's tax summary: one entry per tax rate.
+
+    Receipts with several rates (e.g. 23% and 6% in Portugal) print a table of
+    rate / taxable base / tax. Each row's own arithmetic (base x rate = tax) lets
+    the checks catch a misread digit that a single tax total cannot reveal.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    rate: Decimal | None = Field(None, description="Tax rate as a percentage: 23 for 23%")
+    base: Money | None = Field(
+        None, description="Taxable (net) amount for this rate, only if printed"
+    )
+    amount: Money | None = Field(None, description="Tax amount for this rate, only if printed")
+
+
 class ExtractedInvoice(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -48,6 +65,13 @@ class ExtractedInvoice(BaseModel):
     line_items: list[LineItem] = Field(default_factory=list)
     subtotal: Money | None = None
     tax: Money | None = Field(None, description="Total tax amount, not the rate")
+    tax_breakdown: list[TaxLine] = Field(
+        default_factory=list,
+        description=(
+            "One entry per tax rate shown on the document, in document order. "
+            "Empty if no tax rate is shown"
+        ),
+    )
     discount: Money | None = None
     total: Money | None = Field(None, description="Final amount due")
     # Varies by document type, not just country (US: tax added on top; EU shop

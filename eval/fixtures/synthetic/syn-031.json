@@ -1,0 +1,78 @@
+{
+  "id": "syn-031",
+  "file": "syn-031.jpg",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "scanned receipt, 23% row's IVA 0.40 short (like pt-02's smudge)",
+  "layout": "classic",
+  "planted": [
+    "tax_base_mismatch",
+    "tax_line_math"
+  ],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "FS 2026/01888",
+    "invoice_date": "2026-10-31",
+    "due_date": null,
+    "vendor": {
+      "name": "Mercearia Flor do Mondego, Lda.",
+      "address": "Rua Ferreira Borges 41, 3000-180 Coimbra, Portugal",
+      "tax_id": "PT509876543"
+    },
+    "bill_to_name": null,
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "Pilhas AA (pack 4)",
+        "quantity": "1",
+        "unit_price": "4.51",
+        "amount": "4.51"
+      },
+      {
+        "description": "Pão de forma",
+        "quantity": "1",
+        "unit_price": "1.65",
+        "amount": "1.65"
+      },
+      {
+        "description": "Detergente roupa 3L",
+        "quantity": "2",
+        "unit_price": "9.14",
+        "amount": "18.28"
+      },
+      {
+        "description": "Pão de forma",
+        "quantity": "1",
+        "unit_price": "1.82",
+        "amount": "1.82"
+      }
+    ],
+    "subtotal": null,
+    "tax": "4.06",
+    "tax_breakdown": [
+      {
+        "rate": "23",
+        "base": "18.53",
+        "amount": "3.86"
+      },
+      {
+        "rate": "6",
+        "base": "3.27",
+        "amount": "0.20"
+      }
+    ],
+    "discount": null,
+    "total": "26.26",
+    "prices_include_tax": true
+  },
+  "expected_flags": [
+    {
+      "code": "tax_line_math",
+      "field_path": "tax_breakdown[0].amount"
+    },
+    {
+      "code": "tax_base_mismatch",
+      "field_path": "total"
+    }
+  ]
+}

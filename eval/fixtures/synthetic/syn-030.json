@@ -1,0 +1,66 @@
+{
+  "id": "syn-030",
+  "file": "syn-030.pdf",
+  "source": "synthetic",
+  "as_of": "2026-11-10",
+  "description": "German B2B, MwSt. 19% + 7% table, tax added",
+  "layout": "classic",
+  "planted": [],
+  "duplicate_of": null,
+  "expected": {
+    "invoice_number": "GH-2026-00525",
+    "invoice_date": "2026-08-15",
+    "due_date": "2026-08-29",
+    "vendor": {
+      "name": "Rheinland Gastro-Großhandel GmbH",
+      "address": "Hafenstraße 9, 50678 Köln, Deutschland",
+      "tax_id": "DE314159265"
+    },
+    "bill_to_name": "Orion Health Partners",
+    "currency": "EUR",
+    "line_items": [
+      {
+        "description": "Mineralwasser Kiste 12x1L",
+        "quantity": "22",
+        "unit_price": "6.04",
+        "amount": "132.88"
+      },
+      {
+        "description": "Kaffeebohnen 1 kg",
+        "quantity": "9",
+        "unit_price": "19.48",
+        "amount": "175.32"
+      },
+      {
+        "description": "Mineralwasser Kiste 12x1L",
+        "quantity": "8",
+        "unit_price": "5.85",
+        "amount": "46.80"
+      },
+      {
+        "description": "Weizenmehl Type 405, 25 kg",
+        "quantity": "2",
+        "unit_price": "21.75",
+        "amount": "43.50"
+      }
+    ],
+    "subtotal": "398.50",
+    "tax": "49.46",
+    "tax_breakdown": [
+      {
+        "rate": "19",
+        "base": "179.68",
+        "amount": "34.14"
+      },
+      {
+        "rate": "7",
+        "base": "218.82",
+        "amount": "15.32"
+      }
+    ],
+    "discount": null,
+    "total": "447.96",
+    "prices_include_tax": false
+  },
+  "expected_flags": []
+}

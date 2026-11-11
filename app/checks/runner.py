@@ -15,6 +15,7 @@ from app.checks.arithmetic import (
 from app.checks.base import Flag
 from app.checks.dates import check_due_date_order, check_invoice_date_plausible
 from app.checks.required import check_required_fields
+from app.checks.tax import check_tax_base_total, check_tax_breakdown_sum, check_tax_lines
 from app.schemas.extraction import ExtractedInvoice
 
 
@@ -24,6 +25,9 @@ def run_checks(inv: ExtractedInvoice, today: date) -> list[Flag]:
         *check_line_items(inv),
         *check_subtotal(inv),
         *check_total(inv),
+        *check_tax_lines(inv),
+        *check_tax_breakdown_sum(inv),
+        *check_tax_base_total(inv),
         *check_negative_amounts(inv),
         *check_due_date_order(inv),
         *check_invoice_date_plausible(inv, today),

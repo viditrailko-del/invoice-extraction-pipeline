@@ -58,7 +58,7 @@ app/
   api/               route handlers (thin — no business logic)
   schemas/           Pydantic models: extraction.py = ExtractedInvoice, LineItem, Vendor (source of truth);
                      invoice.py = API response models
-  extraction/        Gemini client, prompts/ (versioned: v1.txt, v2.txt)
+  extraction/        Gemini client, prompts/ (versioned: v1.txt, v2.txt, v3.txt)
   checks/            deterministic check functions (pure)
   db/                SQLAlchemy models, session
 alembic/             migrations
@@ -91,7 +91,7 @@ tests/
 
 ## Extraction notes (learned the hard way)
 
-- Current prompt: `v2` (adds `prices_include_tax`). Old runs keep `v1` in `extraction_runs.prompt_version`.
+- Current prompt: `v3` (adds `tax_breakdown`; `v2` added `prices_include_tax`). Old runs keep their version in `extraction_runs.prompt_version`; old `extracted_json` without `tax_breakdown` still validates (defaults to `[]`).
 - Main model `gemini-3.5-flash`, fallback `gemini-3.5-flash-lite` (set in `.env` / `app/config.py`). ~3s per invoice.
 - `thinking_level="low"`: the default/high thinking took 80–160s for identical output. `minimal` is rejected by these models.
 - Newest models (e.g. `gemini-3.8-flash`) were frequently 503-overloaded. `gemini-2.5-*` returns 404 for new keys.
@@ -124,10 +124,12 @@ docker compose run --rm -T api uv run --frozen python -m eval.run score latest  
 - `docker compose run --rm -T api uv run --frozen python -m scripts.make_fixtures` rebuilds `eval/fixtures/synthetic/` from the `SPECS` list. It's deterministic (seeded and byte-identical), so never hand-edit those files; change `SPECS` and regenerate.
 - Fixture = `<id>.<pdf|png|jpg>` + `<id>.json` containing `expected` (ExtractedInvoice **as printed**, wrong numbers included), `expected_flags` (what `run_checks` must raise at `as_of`), `planted`, and `duplicate_of`.
 - Synthetic data is built first and the document is drawn from it, so labels are exact. The generator asserts the checks raise exactly the planted errors and that key values appear in the PDF text.
+- Multi-rate synthetic vendors (`pt`, `de_mixed`) print a tax table; single-rate ones show only "VAT 20%: x", so their `tax_breakdown` row has `base: null`. Plant `tax_row` = the pt-02 smudge on paper (syn-031).
 - Dates in synthetic invoices use day > 12, so day/month order is never ambiguous.
 - `tests/test_fixtures.py` validates every fixture. If you change a check or the schema, regenerate the fixtures.
 - Discount `expected` keeps the printed sign (`-107.48` if printed negative); the eval should compare discount by absolute value.
 - **Real fixtures** (`eval/fixtures/real/pt-01..10.json`): 10 Portuguese receipts, full labels (line items included), each human-verified (`verified_by`). Images are not in git: run `python -m scripts.fetch_real_fixtures` (downloads from Zenodo once, verifies md5 + per-image sha256).
+  - Real labels have **no `tax_breakdown` key yet** (labeled before prompt v3): the eval skips the field and `test_fixtures` tolerates its absence. Adding it needs the usual human review; then drop the tolerance.
   - Real-fixture semantics: `expected_flags` is `[]` (the documents are correct). `check_false_positives` records what our checks wrongly raise on the TRUE data; it's asserted, so it stays visible. Currently only pt-05 (a line-level discount breaks `line_math` and `subtotal_mismatch`).
   - `alternatives` = other acceptable answers per field path (trading vs legal name, "Consumidor final", ambiguous readings). Phase 5 must accept them.
   - `as_of` = invoice date + 7 days, so old receipts don't trigger the 2-year warning.
@@ -144,8 +146,9 @@ docker compose run --rm -T api uv run --frozen python -m eval.run score latest  
 - **Business duplicates** (same invoice, different file): `app/checks/duplicates.py` builds `dup_key` = normalized vendor + invoice number, stored in an indexed column. A match adds an `error` flag (never a silent reject); a human decides.
 - Known limits: a vendor name that differs beyond legal suffixes (Ltd/Inc/...) won't match. Two copies processed at the exact same moment may miss each other.
 - **Approval rule:** `approved` only when an extraction has zero flags; *any* flag (warning or error) → `needs_review`. Loosen only with eval data (Phase 5).
-- Checks live in `app/checks/` (`required`, `arithmetic`, `dates`), are collected by `runner.run_checks(inv, today)`, and return `checks.base.Flag`. `today` is a parameter so checks stay pure. Duplicate detection needs the DB, so it runs in `service.py`, not the runner.
+- Checks live in `app/checks/` (`required`, `arithmetic`, `dates`, `tax`), are collected by `runner.run_checks(inv, today)`, and return `checks.base.Flag`. `today` is a parameter so checks stay pure. Duplicate detection needs the DB, so it runs in `service.py`, not the runner.
 - Total check accepts the discount printed as positive or negative, and the subtotal given before or after the discount; it flags only when none of these readings adds up. Line math rounds half-up to cents.
+- **Tax breakdown** (`app/checks/tax.py`): `tax_breakdown` = one row per tax rate (`rate` in percent, `base`, `amount`; null when not printed). `tax_line_math`: base × rate ≠ row amount. `tax_breakdown_mismatch`: rows don't sum to `tax`. `tax_base_mismatch`: bases + tax ≠ total (holds for tax added and included). Each runs only when its numbers are present. Added because pt-02's smudged 23% row (2,96 read as 2,56) passed every other check.
 - **Tax added vs included** varies by document type, not just country (US and B2B invoices add tax; EU shop receipts include it). The extracted field `prices_include_tax` decides: `false` → total = base − discount + tax; `true` → total = base − discount; `null` → accept either. Never infer it from the country. On tax-included receipts the tax base ("Base Imp.") is not the subtotal.
 - **Review (Phase 4, `app/review/`):** `PATCH /invoices/{id}` applies all changes or none. The result is validated against `ExtractedInvoice`, each changed field appends a `corrections` row, the checks re-run, and status is recomputed (no open flags → approved). `POST .../flags/{flag_id}/resolve` = a human accepts a flagged value. `POST .../reject` is final. `GET .../corrections` returns the audit trail.
 - On re-check, a flag's identity is `(code, field_path, reason)`. Problem gone → resolved by `system:recheck` (never deleted). A problem a human already resolved is not raised again. Changing vendor or invoice number re-runs duplicate detection.
@@ -162,7 +165,7 @@ Build in phase order. Don't add queues, auth, S3, or a frontend until the eval h
 
 | Phase | Goal | Status |
 |---|---|---|
-| 0 | Ground-truth fixtures (20–30 labeled invoices) | done (28 synthetic + 10 real, human-verified) |
+| 0 | Ground-truth fixtures (20–30 labeled invoices) | done (31 synthetic + 10 real, human-verified) |
 | 1 | Skeleton: FastAPI + Postgres + Alembic + upload/get, idempotent hashing | done |
 | 2 | Gemini extraction + Pydantic validation + retry + raw storage | done |
 | 3 | Deterministic checks + flags + status | done |

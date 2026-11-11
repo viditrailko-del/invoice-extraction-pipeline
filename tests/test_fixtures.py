@@ -51,7 +51,12 @@ def test_fixture_is_valid(path):
 
     # answer key must satisfy the same schema the LLM must satisfy (and round-trip)
     inv = ExtractedInvoice.model_validate(fx["expected"])
-    assert inv.model_dump(mode="json") == fx["expected"]
+    dumped = inv.model_dump(mode="json")
+    if is_real(fx) and "tax_breakdown" not in fx["expected"]:
+        # Real labels predate prompt v3; their tax tables are labeled separately (and
+        # human-reviewed) before being added. Until then the eval skips the field.
+        del dumped["tax_breakdown"]
+    assert dumped == fx["expected"]
 
     raised = [{"code": f.code, "field_path": f.field_path}
               for f in run_checks(inv, date.fromisoformat(fx["as_of"]))]

@@ -98,6 +98,23 @@ def test_score_fields_extra_and_missing_lines():
     assert results["line_items[1].amount"].outcome == "missing"  # dropped line
 
 
+def test_tax_breakdown_rows_are_scored():
+    rows = [{"rate": "23", "base": "12.89", "amount": "2.96"}]
+    expected = _invoice(tax_breakdown=rows)
+    misread = _invoice(tax_breakdown=[dict(rows[0], amount="2.56")])
+    results = {r.path: r for r in score_fields(expected, misread, {})}
+    assert results["tax_breakdown[0].amount"].outcome == "wrong"
+    assert results["tax_breakdown[0].rate"].ok and results["tax_breakdown.count"].ok
+    assert not results["tax_breakdown[0].amount"].critical  # `tax` is the critical one
+
+
+def test_unlabeled_list_is_skipped():
+    expected = _invoice()  # no tax_breakdown key: not labeled
+    actual = _invoice(tax_breakdown=[{"rate": "20", "base": None, "amount": "2.00"}])
+    paths = {r.path for r in score_fields(expected, actual, {})}
+    assert not any(p.startswith("tax_breakdown") for p in paths)
+
+
 def test_failed_extraction_scores_every_field_failed():
     results = score_fields(_invoice(), None, {})
     assert {r.outcome for r in results} == {"failed"}
