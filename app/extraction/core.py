@@ -10,6 +10,7 @@ and writes it to a results file. That way the eval measures exactly the code the
 runs, instead of a copy that could drift apart from it.
 """
 
+import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -23,7 +24,10 @@ from pydantic import ValidationError
 from app.config import Settings
 from app.extraction.client import Extractor, LLMError
 from app.extraction.pricing import cost_usd
+from app.logging_setup import log_event
 from app.schemas.extraction import ExtractedInvoice
+
+log = logging.getLogger(__name__)
 
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 MAX_TRANSIENT_RETRIES = 2  # per model, so up to 3 calls each
@@ -92,6 +96,8 @@ def extract_invoice(
         except ValidationError as e:
             attempt.error = f"validation: {e}"[:4000]
             recorder.update(attempt)
+            log_event(log, logging.WARNING, "llm_output_invalid", model=attempt.model,
+                      error_count=e.error_count(), first_error=_short_errors(e).splitlines()[0][:200])
             prompt = base_prompt + RETRY_FEEDBACK.format(errors=_short_errors(e))
     return None
 
@@ -121,6 +127,8 @@ def _call_llm(
                 attempt.error = str(e)[:4000]
                 attempt.latency_ms = e.latency_ms
                 recorder.record(attempt)
+                log_event(log, logging.WARNING, "llm_call_failed", model=model,
+                          transient=e.transient, latency_ms=e.latency_ms, error=str(e)[:200])
                 if not e.transient:
                     break  # e.g. bad request: same model won't fix it, try the fallback
                 if attempt_no < MAX_TRANSIENT_RETRIES:

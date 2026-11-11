@@ -80,6 +80,8 @@ def cmd_extract(args: argparse.Namespace) -> Path:
         if v is not None
     }
     settings = get_settings().model_copy(update=overrides)
+    if not settings.gemini_api_key:
+        sys.exit("GEMINI_API_KEY is not set: the eval calls the real API")
     fixtures = load_fixtures(set(args.only.split(",")) if args.only else None)
     missing = [fx.id for fx in fixtures if not fx.file_path.exists()]
     if missing:

@@ -39,3 +39,15 @@ def test_real_api_error_string_is_classified():
     """str(APIError) is what GeminiExtractor passes in: make sure the text survives."""
     e = errors.APIError(429, {"error": {"code": 429, "message": PER_DAY, "status": "RESOURCE_EXHAUSTED"}})
     assert not is_transient(e.code, str(e))
+
+
+def test_missing_api_key_is_a_permanent_llm_error_not_a_crash():
+    """Rule 8: a missing key must end as extraction_failed, never an HTTP 500."""
+    import pytest
+
+    from app.extraction.client import GeminiExtractor, LLMError
+
+    extractor = GeminiExtractor("")  # constructing it must not raise
+    with pytest.raises(LLMError) as err:
+        extractor.generate(file_bytes=b"x", mime_type="application/pdf", prompt="p", schema={}, model="m")
+    assert not err.value.transient and "GEMINI_API_KEY" in str(err.value)

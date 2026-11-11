@@ -164,6 +164,14 @@ docker compose run --rm -T api uv run --frozen python -m eval.run score latest  
 - A new derived column needs a **backfill** for old rows (see `scripts/backfill_dup_keys.py`, run with `python -m scripts.<name>`). Backfills must be idempotent.
 - Tests set `RECOVER_ON_STARTUP=false` (in `tests/conftest.py`) so startup never touches the dev DB or real Gemini.
 
+## Production hardening (Phase 6)
+
+- **Logging** (`app/logging_setup.py`, stdlib only): `log_event(log, level, "event_name", **fields)`. `LOG_FORMAT=json` → one JSON object per line (prod image default); `text` → `key=value`. Every extraction ends with one `extraction_finished` event (status, model, llm_calls, failed_calls, latency, tokens, cost_usd, flags); `llm_call_failed` / `llm_output_invalid` as they happen. Decimals log as strings.
+- uvicorn's loggers are routed through ours, and again at startup (`adopt_uvicorn_loggers` in the lifespan): `fastapi run` imports the app before uvicorn applies its log config.
+- **Dockerfile targets:** `dev` (compose; all deps, bind mount, reload) and `prod` (default: `--no-dev`, no uv, non-root uid 10001, JSON logs, HEALTHCHECK on /health, only `app/` + `alembic/`). Migrations are a separate deploy step (`alembic upgrade head`), not run at startup. After changing the Dockerfile: `docker compose build api`.
+- **Missing `GEMINI_API_KEY`** never causes a 500: `GeminiExtractor` raises a permanent `LLMError` at call time, so uploads are stored and end `extraction_failed` (retryable); startup logs `gemini_api_key_missing`. The eval CLI refuses to start without a key.
+- README.md holds the architecture, current eval numbers and the findings → fixes table: update it when a new eval run changes the numbers.
+
 ## Scope discipline
 
 Build in phase order. Don't add queues, auth, S3, or a frontend until the eval harness (Phase 5) works.
@@ -176,7 +184,7 @@ Build in phase order. Don't add queues, auth, S3, or a frontend until the eval h
 | 3 | Deterministic checks + flags + status | done |
 | 4 | Review endpoints: list flagged, PATCH corrections w/ audit | done |
 | 5 | Eval harness: field accuracy, flag precision/recall, cost/latency | done (harness + first run; main-model numbers blocked by free-tier quota) |
-| 6 | Hardening: logging, Dockerfile, README with real eval numbers | todo |
+| 6 | Hardening: logging, Dockerfile, README with real eval numbers | done (README numbers are flash-lite; main model pending quota/billing) |
 
 Update the Status column when a phase is done.
 

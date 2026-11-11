@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     prompt_version: str = "v3"  # v3 adds tax_breakdown
     llm_retry_backoff_s: float = 2.0  # waits 2s, then 4s, between retries
     recover_on_startup: bool = True  # re-run invoices stuck by a crash/restart
+    log_format: str = "text"  # "json" in the production image: one JSON object per line
+    log_level: str = "INFO"
 
 
 @lru_cache

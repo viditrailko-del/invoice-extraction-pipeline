@@ -18,7 +18,9 @@ services:
       retries: 15
 
   api:
-    build: .
+    build:
+      context: .
+      target: dev  # the Dockerfile's default target is the production image
     # Dev mode: auto-reload on code changes (polling needed for Windows bind mounts).
     command: uv run --frozen fastapi dev app/main.py --host 0.0.0.0 --port 8000
     ports:

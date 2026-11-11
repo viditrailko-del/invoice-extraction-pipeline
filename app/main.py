@@ -13,8 +13,9 @@ from app.config import get_settings
 from app.db.session import SessionLocal, get_db
 from app.extraction.deps import get_extractor
 from app.extraction.service import process_invoice, recover_stuck_jobs
+from app.logging_setup import adopt_uvicorn_loggers, configure_logging, log_event
 
-logging.basicConfig(level=logging.INFO)
+configure_logging(get_settings().log_format, get_settings().log_level)
 log = logging.getLogger(__name__)
 
 
@@ -22,6 +23,10 @@ log = logging.getLogger(__name__)
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # On startup: re-run any invoice a previous crash/restart left behind.
     settings = get_settings()
+    adopt_uvicorn_loggers()  # uvicorn configured its loggers after our import
+    if not settings.gemini_api_key:
+        log_event(log, logging.ERROR, "gemini_api_key_missing",
+                  hint="uploads are stored but every extraction will fail until it is set")
     if settings.recover_on_startup:
         loop = asyncio.get_running_loop()
         try:

@@ -55,16 +55,21 @@ class Extractor(Protocol):
 
 class GeminiExtractor:
     def __init__(self, api_key: str, *, timeout_s: int = 60, thinking_level: str = "low"):
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY is not set")
-        self._client = genai.Client(
-            api_key=api_key, http_options=types.HttpOptions(timeout=timeout_s * 1000)
+        # A missing key must not turn uploads into HTTP 500s (rule 8): the upload is
+        # stored, each call fails as a permanent LLMError, the job ends extraction_failed
+        # and POST /invoices/{id}/retry works once the key is configured.
+        self._client = (
+            genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=timeout_s * 1000))
+            if api_key
+            else None
         )
         self._thinking_level = thinking_level
 
     def generate(
         self, *, file_bytes: bytes, mime_type: str, prompt: str, schema: dict[str, Any], model: str
     ) -> LLMResponse:
+        if self._client is None:
+            raise LLMError("GEMINI_API_KEY is not set", transient=False)
         start = time.monotonic()
         uploaded = None
         try:
