@@ -97,7 +97,7 @@ tests/
 - `thinking_level="low"`: the default/high thinking took 80–160s for identical output. `minimal` is rejected by these models.
 - Newest models (e.g. `gemini-3.8-flash`) were frequently 503-overloaded. `gemini-2.5-*` returns 404 for new keys.
 - **Free tier: 20 requests/day for the main model.** Past that every call 429s and the fallback answers. A per-day 429 is non-transient (`client.is_transient`): it skips straight to the fallback, while a per-minute 429 (limit 5) is still retried. `gemini-3.5-flash` is deprecated and Google routes it to `gemini-3.6-flash` (the 429 names 3.6).
-- `flash-lite` sometimes returns money as strings with thousands separators (`"1,400.00"`); validation rejects it and the retry usually fixes it.
+- **Numbers are JSON numbers only in the schema we send** (`Number`/`Money` in `schemas/extraction.py` use `WithJsonSchema({"type": "number"})`). Pydantic's default Decimal schema also allows any string, and flash-lite answered `"2,79"`, `"1,400.00"`, `"1 C"`: retries and one failed extraction (pt-07). Validation still accepts numeric strings (stored data/fixtures). `tests/test_schema.py` guards it. Eval manifests record `schema_sha` since the schema shapes answers like the prompt does.
 - `google-genai` is v3.x: verify its API in the container before assuming older docs apply.
 - Re-scoring an old eval run after regenerating fixtures compares old answers with changed documents (e.g. new tax IDs): run `extract` again instead.
 - Schema: `app/schemas/extraction.py` → passed as `response_json_schema`. Gemini returns money as JSON numbers; Pydantic turns them into `Decimal`; stored as strings.

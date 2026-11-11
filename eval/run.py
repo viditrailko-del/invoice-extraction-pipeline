@@ -12,6 +12,7 @@ compared on exactly the same answers.
 """
 
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
@@ -25,7 +26,7 @@ from typing import Any
 from app.checks.duplicates import DUPLICATE_CODE, make_dup_key
 from app.config import Settings, get_settings
 from app.extraction.client import Extractor, GeminiExtractor
-from app.extraction.core import Attempt, extract_invoice
+from app.extraction.core import Attempt, extract_invoice, response_schema
 from app.schemas.extraction import ExtractedInvoice
 from eval.dataset import RESULTS_DIR, Fixture, load_fixtures
 from eval.report import FixtureScore, build_report, render_markdown
@@ -101,6 +102,9 @@ def cmd_extract(args: argparse.Namespace) -> Path:
         "fallback_model": settings.gemini_fallback_model,
         "prompt_version": settings.prompt_version,
         "thinking_level": settings.gemini_thinking_level,
+        # The response schema shapes answers as much as the prompt does (e.g. number-only
+        # money): fingerprint it so runs from before/after a schema change can be told apart.
+        "schema_sha": schema_fingerprint(),
         "git_commit": _git_commit(),
         "fixtures": [fx.id for fx in fixtures],
     }
@@ -197,6 +201,11 @@ def _answered_by(attempts: list[dict[str, Any]]) -> str | None:
     """The last call that returned output without a validation error is the one used."""
     used = [a for a in attempts if a["raw_response"] is not None and not a["error"]]
     return used[-1]["model"] if used else None
+
+
+def schema_fingerprint() -> str:
+    canonical = json.dumps(response_schema(), sort_keys=True).encode()
+    return hashlib.sha256(canonical).hexdigest()[:12]
 
 
 def _git_commit() -> str | None:

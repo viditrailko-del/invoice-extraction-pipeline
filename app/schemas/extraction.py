@@ -13,9 +13,16 @@ from datetime import date
 from decimal import Decimal
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, WithJsonSchema
 
-Money = Annotated[Decimal, Field(max_digits=14, decimal_places=4)]
+# What Gemini is ALLOWED to answer for a number: a JSON number, nothing else.
+# Pydantic's default schema for Decimal also allows any string, so the model sent
+# "2,79" (decimal comma), "1,400.00" and "1 C" (quantity + tax class), which failed
+# validation and sometimes the whole extraction (eval 20261111-055744, pt-07).
+# This only changes the schema we SEND; validation still accepts numeric strings
+# like "22.00", which is how stored extractions and fixtures write money.
+Number = Annotated[Decimal, WithJsonSchema({"type": "number"})]
+Money = Annotated[Number, Field(max_digits=14, decimal_places=4)]
 CurrencyCode = Annotated[str, StringConstraints(pattern=r"^[A-Z]{3}$")]
 
 
@@ -31,7 +38,7 @@ class LineItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     description: str | None = None
-    quantity: Decimal | None = None
+    quantity: Number | None = None
     unit_price: Money | None = None
     amount: Money | None = Field(None, description="Line total exactly as printed")
 
@@ -46,7 +53,7 @@ class TaxLine(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    rate: Decimal | None = Field(None, description="Tax rate as a percentage: 23 for 23%")
+    rate: Number | None = Field(None, description="Tax rate as a percentage: 23 for 23%")
     base: Money | None = Field(
         None, description="Taxable (net) amount for this rate, only if printed"
     )

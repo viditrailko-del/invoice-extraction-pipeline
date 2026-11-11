@@ -148,7 +148,8 @@ def render_markdown(manifest: dict[str, Any], report: dict[str, Any], scores: li
         f"# Eval run `{manifest['run_id']}`",
         "",
         f"Model `{manifest['model']}` (fallback `{manifest['fallback_model']}`), "
-        f"prompt `{manifest['prompt_version']}`, thinking `{manifest['thinking_level']}`, "
+        f"prompt `{manifest['prompt_version']}`, schema `{manifest.get('schema_sha', '?')}`, "
+        f"thinking `{manifest['thinking_level']}`, "
         f"commit `{manifest.get('git_commit') or '?'}`.",
         "",
         "| Metric | " + " | ".join(cols) + " |",
