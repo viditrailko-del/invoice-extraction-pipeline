@@ -183,8 +183,8 @@ Build in phase order. Don't add queues, auth, S3, or a frontend until the eval h
 | 2 | Gemini extraction + Pydantic validation + retry + raw storage | done |
 | 3 | Deterministic checks + flags + status | done |
 | 4 | Review endpoints: list flagged, PATCH corrections w/ audit | done |
-| 5 | Eval harness: field accuracy, flag precision/recall, cost/latency | done (harness + first run; main-model numbers blocked by free-tier quota) |
-| 6 | Hardening: logging, Dockerfile, README with real eval numbers | done (README numbers are flash-lite; main model pending quota/billing) |
+| 5 | Eval harness: field accuracy, flag precision/recall, cost/latency | done (flash-lite on all 41; flash on the 10 real: run `20261111-113016-v3-merged`) |
+| 6 | Hardening: logging, Dockerfile, README with real eval numbers, CI | done |
 
 Update the Status column when a phase is done.
 

@@ -108,11 +108,33 @@ Run `20261111-061513-v3`: `gemini-3.5-flash-lite`, prompt v3, all 41 fixtures.
   - **pt-05:** the model misread whether tax is included, and the total check correctly
     caught the inconsistent extraction.
 
+#### Main model on the real receipts
+
+Run `20261111-113016-v3-merged`: `gemini-3.5-flash`, no fallback, the 10 real receipts
+(the free tier allows 20 main-model requests a day, so not the full 41).
+
+| | flash-lite | **flash** |
+|---|---|---|
+| Field accuracy | 96.7% | **97.9%** |
+| Critical-field accuracy | 97.9% | **99.3%** |
+| Correct auto-approvals | 6 | **8** |
+| Needless reviews | 2 | **1** (pt-03) |
+| Unsafe approvals | 1 | 1 |
+| Latency p50 | 3.7 s | 6.9 s |
+| Cost per invoice | $0.0016 | $0.0051 |
+
+- **flash read pt-02's smudged digits correctly** (tax row 2,96 and NIF 501419926), the
+  ones that fooled flash-lite and human readers.
+- **Its one unsafe approval (pt-02):** it left the total `tax` empty, though the tax rows
+  it extracted add up to the right 3.11. No check fires on an empty tax next to filled
+  tax rows. The data needed is there, but it's counted honestly.
+- pt-07 hit a 503 overload and then the per-minute rate limit, and ended as
+  `extraction_failed` (as designed: no crash). The merged run takes pt-07 from an
+  identical-config retry (`20261111-113306-v3`), which got every field right.
+
 **Caveats:**
-- These are `flash-lite` numbers. The main model (`gemini-3.5-flash`) hasn't been
-  measured on the full set: the free tier allows 20 requests a day, fewer than the 41
-  fixtures.
-- 41 invoices is a small sample, and the real receipts are all Portuguese.
+- 41 invoices is a small sample, and the real receipts are all Portuguese. The main
+  model has only been measured on the 10 real ones.
 
 ### Sample output
 
