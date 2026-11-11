@@ -111,6 +111,67 @@ def test_line_index_in_path_points_at_bad_line():
     assert paths(check_line_items(inv(line_items=lines))) == ["line_items[2].amount"]
 
 
+# --- per-line discount (real receipt pt-05) ----------------------------------------
+
+
+def pt05(**overrides) -> ExtractedInvoice:
+    """MALA 1 x 3.95 printed at 3.16 after "20% Dto. -0,79"; Sub Total 13.70 is
+    before the discount, total 12.91 after. Prices include tax."""
+    data = {
+        "line_items": [
+            {"description": "CALCA", "quantity": "1", "unit_price": "9.75", "amount": "9.75"},
+            {"description": "MALA", "quantity": "1", "unit_price": "3.95", "amount": "3.16"},
+        ],
+        "subtotal": "13.70", "discount": "0.79", "tax": "2.41", "total": "12.91",
+        "prices_include_tax": True,
+    }
+    data.update(overrides)
+    return inv(**data)
+
+
+def test_per_line_discount_is_not_a_line_math_error():
+    assert check_line_items(pt05()) == []
+
+
+def test_subtotal_before_per_line_discount_is_accepted():
+    assert check_subtotal(pt05()) == []
+
+
+def test_per_line_discount_printed_negative():
+    assert check_line_items(pt05(discount="-0.79")) == check_subtotal(pt05(discount="-0.79")) == []
+
+
+def test_line_gap_not_matching_the_discount_is_still_flagged():
+    # 3.16 misread as 3.61: the gap (0.34) no longer explains the 0.79 discount
+    lines = [pt05().line_items[0].model_dump(), {"quantity": "1", "unit_price": "3.95", "amount": "3.61"}]
+    assert paths(check_line_items(pt05(line_items=lines))) == ["line_items[1].amount"]
+
+
+def test_without_a_discount_a_short_line_is_still_flagged():
+    assert paths(check_line_items(pt05(discount=None))) == ["line_items[1].amount"]
+    assert paths(check_subtotal(pt05(discount=None))) == ["subtotal"]
+
+
+def test_a_line_above_qty_x_price_is_never_explained_by_a_discount():
+    lines = [
+        {"quantity": "1", "unit_price": "9.75", "amount": "10.54"},  # +0.79: not a discount
+        {"quantity": "1", "unit_price": "3.95", "amount": "3.95"},
+    ]
+    assert paths(check_line_items(pt05(line_items=lines))) == ["line_items[0].amount"]
+
+
+def test_discount_split_over_two_lines():
+    lines = [
+        {"quantity": "1", "unit_price": "10.00", "amount": "9.00"},
+        {"quantity": "2", "unit_price": "5.00", "amount": "9.50"},
+    ]  # gaps 1.00 + 0.50 = 1.50 = discount
+    assert check_line_items(pt05(line_items=lines, discount="1.50", subtotal="20.00")) == []
+
+
+def test_pt05_whole_runner_is_clean():
+    assert run_checks(pt05(), TODAY) == []
+
+
 # --- subtotal -----------------------------------------------------------------
 
 

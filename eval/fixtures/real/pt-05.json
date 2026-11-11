@@ -67,17 +67,8 @@
     ]
   },
   "expected_flags": [],
-  "check_false_positives": [
-    {
-      "code": "line_math",
-      "field_path": "line_items[1].amount"
-    },
-    {
-      "code": "subtotal_mismatch",
-      "field_path": "subtotal"
-    }
-  ],
-  "notes": "The 20% discount applies to one line (MALA 3.95 -> 3.16), so qty x price != amount there and the lines (12.91) don't sum to the printed Sub Total (13.70, pre-discount). The document is correct: these are check false positives.",
+  "check_false_positives": [],
+  "notes": "The 20% discount applies to one line (MALA 3.95 -> 3.16), so qty x price != amount there and the lines (12.91) don't sum to the printed Sub Total (13.70, pre-discount). The document is correct. This used to raise line_math + subtotal_mismatch (check false positives); fixed 2026-11-11: checks.arithmetic.discount_applied_in_lines accepts line gaps that add up exactly to the printed discount.",
   "verified_by": "Vidit",
   "verified_at": "2026-11-10T06:06:53Z",
   "tax_breakdown_verified_by": "Vidit",

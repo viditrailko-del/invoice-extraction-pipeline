@@ -6,12 +6,37 @@ the required-fields check's job; here we only flag numbers that disagree.
 
 from decimal import Decimal
 
-from app.checks.base import Flag, money_equal, to_cents
+from app.checks.base import TOLERANCE, Flag, money_equal, to_cents
 from app.schemas.extraction import ExtractedInvoice
 
 
+def discount_applied_in_lines(inv: ExtractedInvoice) -> bool:
+    """True when the invoice's discount was taken off inside the line amounts.
+
+    Receipts often discount ONE line ("MALA 1 x 3,95 ... 3,16", then "20% Dto. -0,79",
+    real receipt pt-05), so that line's qty x price != amount and the lines no longer
+    add up to a subtotal printed before the discount. That's consistent, not an error,
+    when every gap is a reduction and the gaps add up exactly to the printed discount.
+    A misread amount would have to match the discount to the cent to hide here.
+    """
+    if not inv.discount:
+        return False
+    gaps = [
+        to_cents(line.quantity * line.unit_price) - line.amount
+        for line in inv.line_items
+        if line.quantity is not None and line.unit_price is not None and line.amount is not None
+    ]
+    if any(g < -TOLERANCE for g in gaps):
+        return False  # a line amount ABOVE qty x price is not a discount
+    total_gap = sum(gaps, Decimal("0"))
+    return total_gap > TOLERANCE and money_equal(total_gap, abs(inv.discount))
+
+
 def check_line_items(inv: ExtractedInvoice) -> list[Flag]:
-    """quantity x unit_price must equal the printed line amount."""
+    """quantity x unit_price must equal the printed line amount (unless the gaps are
+    exactly the invoice's discount, applied per line)."""
+    if discount_applied_in_lines(inv):
+        return []
     flags = []
     for i, line in enumerate(inv.line_items):
         if line.quantity is None or line.unit_price is None or line.amount is None:
@@ -39,11 +64,19 @@ def _lines_sum(inv: ExtractedInvoice) -> Decimal | None:
 
 
 def check_subtotal(inv: ExtractedInvoice) -> list[Flag]:
-    """Line amounts must add up to the subtotal."""
+    """Line amounts must add up to the subtotal.
+
+    With a per-line discount, the subtotal may be printed BEFORE it (pt-05: lines 12,91
+    after the discount, "Sub Total 13,70" before it), i.e. lines + discount.
+    """
     lines_sum = _lines_sum(inv)
     if inv.subtotal is None or lines_sum is None:
         return []
     if money_equal(lines_sum, inv.subtotal):
+        return []
+    if discount_applied_in_lines(inv) and money_equal(
+        lines_sum + abs(inv.discount or Decimal("0")), inv.subtotal
+    ):
         return []
     return [
         Flag(
