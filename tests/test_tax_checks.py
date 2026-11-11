@@ -3,7 +3,12 @@
 
 from decimal import Decimal
 
-from app.checks.tax import check_tax_base_total, check_tax_breakdown_sum, check_tax_lines
+from app.checks.tax import (
+    check_tax_base_total,
+    check_tax_breakdown_sum,
+    check_tax_lines,
+    check_tax_total_missing,
+)
 from app.schemas.extraction import ExtractedInvoice
 
 
@@ -76,6 +81,30 @@ def test_sum_skipped_when_a_row_amount_missing():
 
 def test_sum_skipped_without_tax_total():
     assert check_tax_breakdown_sum(receipt(GOOD, tax=None)) == []
+
+
+# --- tax total left empty -----------------------------------------------------------
+
+
+def test_tax_total_present_ok():
+    assert check_tax_total_missing(receipt(GOOD)) == []
+
+
+def test_rows_without_tax_total_warns():
+    """flash on pt-02: rows read correctly, tax total left empty."""
+    flags = check_tax_total_missing(receipt(GOOD, tax=None))
+    assert codes(flags) == [("tax_total_missing", "tax")]
+    assert flags[0].severity == "warning"
+
+
+def test_rate_only_rows_do_not_warn():
+    # pt-08: only "13%" is printed, no amounts, no tax total
+    rows = [{"rate": "13", "base": None, "amount": None}]
+    assert check_tax_total_missing(receipt(rows, tax=None)) == []
+
+
+def test_no_tax_at_all_does_not_warn():
+    assert check_tax_total_missing(receipt([], tax=None)) == []
 
 
 # --- bases + tax vs total -----------------------------------------------------------

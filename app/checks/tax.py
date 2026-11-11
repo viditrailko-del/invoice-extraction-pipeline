@@ -54,6 +54,28 @@ def check_tax_breakdown_sum(inv: ExtractedInvoice) -> list[Flag]:
     ]
 
 
+def check_tax_total_missing(inv: ExtractedInvoice) -> list[Flag]:
+    """Tax rows with amounts but no tax total: the total may have been skipped.
+
+    Found by eval run 20261111-113016-v3-merged: gemini-3.5-flash read pt-02's tax
+    rows correctly but left `tax` empty, and no other check looked at an empty tax.
+    A warning, not an error: some receipts print only per-rate tax (pt-07), and then
+    an empty total is the right answer. We still never compute it (rule 1).
+    """
+    if inv.tax is not None:
+        return []
+    if not any(row.amount is not None for row in inv.tax_breakdown):
+        return []
+    return [
+        Flag(
+            "tax_total_missing",
+            "tax",
+            "Tax rows have amounts, but the tax total is empty",
+            "warning",
+        )
+    ]
+
+
 def check_tax_base_total(inv: ExtractedInvoice) -> list[Flag]:
     """Taxable bases plus their tax must add up to the total.
 

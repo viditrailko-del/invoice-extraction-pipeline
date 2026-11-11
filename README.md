@@ -52,6 +52,7 @@ network. That makes them easy to unit-test and to re-run after a correction.
 | `line_math` | qty × unit price ≠ line amount (a discount applied inside the lines is accepted) |
 | `subtotal_mismatch` / `total_mismatch` | totals that don't add up. Tax *added* vs *included* comes from the document (`prices_include_tax`), never from the country. |
 | `tax_line_math` / `tax_breakdown_mismatch` / `tax_base_mismatch` | a tax table row where base × rate ≠ tax, rows that don't sum to the tax, or bases + tax ≠ total |
+| `tax_total_missing` | tax rows with amounts but an empty tax total (a warning: some receipts print only per-rate tax) |
 | `tax_id_invalid` | a vendor tax ID that fails its check digit (EU VAT, UK VAT, PT NIF, IN GSTIN, …, via `python-stdnum`). Only applied when the document shows the country. |
 | `due_before_invoice` / `date_implausible` | impossible dates |
 | `negative_amount` | negative values (a warning: credit notes exist) |
@@ -119,15 +120,17 @@ Run `20261111-113016-v3-merged`: `gemini-3.5-flash`, no fallback, the 10 real re
 | Critical-field accuracy | 97.9% | **99.3%** |
 | Correct auto-approvals | 6 | **8** |
 | Needless reviews | 2 | **1** (pt-03) |
-| Unsafe approvals | 1 | 1 |
+| Unsafe approvals | 1 | **0** (was 1, see below) |
 | Latency p50 | 3.7 s | 6.9 s |
 | Cost per invoice | $0.0016 | $0.0051 |
 
 - **flash read pt-02's smudged digits correctly** (tax row 2,96 and NIF 501419926), the
   ones that fooled flash-lite and human readers.
-- **Its one unsafe approval (pt-02):** it left the total `tax` empty, though the tax rows
-  it extracted add up to the right 3.11. No check fires on an empty tax next to filled
-  tax rows. The data needed is there, but it's counted honestly.
+- **Its one unsafe approval (pt-02), now fixed:** it left the total `tax` empty, though
+  the tax rows it extracted add up to the right 3.11, and no check looked at an empty tax.
+  The new `tax_total_missing` warning sends it to review. Re-scored offline on all 7
+  saved runs: this unsafe approval is gone, and one older flash-lite run gains one needless
+  review (pt-07, which prints no tax total, so empty is correct there).
 - pt-07 hit a 503 overload and then the per-minute rate limit, and ended as
   `extraction_failed` (as designed: no crash). The merged run takes pt-07 from an
   identical-config retry (`20261111-113306-v3`), which got every field right.
@@ -200,6 +203,7 @@ Each fix below was found by the harness, then verified by it.
 | A misread vendor NIF, 501419926 read as 501415926 (pt-02) | Check-digit validation via `python-stdnum` | Caught |
 | `flash-lite` returned money as `"2,79"` and quantities as `"1 C"`. Pydantic's default `Decimal` schema allows any string. | Money and quantities are sent to Gemini as JSON numbers only | Validation errors 3 → 0 and real-receipt field accuracy 81% → 97.6% (same 10 receipts) |
 | A daily quota error was retried 3× before falling back (~15 s per invoice) | A per-day 429 is now treated as permanent, while a per-minute 429 is still retried | Goes straight to the fallback |
+| flash read pt-02's tax rows right but left the tax total empty, and nothing flagged it | `tax_total_missing` warning | flash: unsafe approvals 1 → 0; costs one needless review on pt-07-style receipts |
 | A correct receipt with a per-line discount was flagged (pt-05) | Line gaps that add up to the printed discount are accepted | 2 false alarms removed; re-scored on all saved runs with no new unsafe approvals |
 
 ## Running it
