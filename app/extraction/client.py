@@ -5,6 +5,7 @@ fake extractor and never call the real API (CLAUDE.md rule: tests never hit Gemi
 """
 
 import io
+import re
 import time
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -19,6 +20,12 @@ INLINE_LIMIT_BYTES = 14 * 1024 * 1024
 
 # HTTP codes worth retrying: rate limit, server errors, overloaded.
 TRANSIENT_CODES = {408, 429, 500, 502, 503, 504}
+
+# A 429 means either "too many per MINUTE" (wait a few seconds and retry) or "too many
+# per DAY" (this model is done until the quota resets). Retrying a daily quota only
+# burns time (~15 s per invoice in the first eval run), so it goes straight to the
+# fallback model instead.
+DAILY_QUOTA = re.compile(r"per day|PerDay", re.IGNORECASE)
 
 
 @dataclass
@@ -82,7 +89,7 @@ class GeminiExtractor:
         except errors.APIError as e:
             raise LLMError(
                 f"{e.code}: {str(e)[:500]}",
-                transient=e.code in TRANSIENT_CODES,
+                transient=is_transient(e.code, str(e)),
                 latency_ms=_ms_since(start),
             ) from e
         except httpx.TimeoutException as e:
@@ -103,6 +110,13 @@ class GeminiExtractor:
             output_tokens=usage.candidates_token_count if usage else None,
             thinking_tokens=usage.thoughts_token_count if usage else None,
         )
+
+
+def is_transient(code: int, message: str) -> bool:
+    """Could the SAME model succeed if we retry it soon?"""
+    if code == 429 and DAILY_QUOTA.search(message):
+        return False
+    return code in TRANSIENT_CODES
 
 
 def _ms_since(start: float) -> int:
