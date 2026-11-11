@@ -96,7 +96,7 @@
   <div class="actions"><button class="primary" id="copy">Copy</button><button class="secondary" id="close">Close</button></div>
 </dialog>
 <script>
-const KEY = "label-review-v1";
+let KEY = "label-review-v1";  // a focused review (e.g. tax_breakdown) uses its own key
 const HEADER = [
   ["invoice_number", "Invoice number"], ["invoice_date", "Invoice date"], ["due_date", "Due date"],
   ["vendor.name", "Vendor name"], ["vendor.address", "Vendor address"], ["vendor.tax_id", "Vendor tax ID"],
@@ -123,9 +123,65 @@ const parse = (raw, original) => {
   return raw;
 };
 
+// Focused review of the tax table only: the rest of the label was verified before.
+const GLOSSARY = "Portuguese column names: <b>Taxa / Taxa% / IVA% / TX</b> = rate · <b>Base Imp. / Incidência / Sujeito / Base</b> = taxable base · <b>Valor Iva / Valor Imposto / Quota / IVA</b> = tax amount · <b>Valor Total / Total</b> = base + tax (not labeled).";
+const num = v => v === "" || v === null || v === undefined ? null : Number(String(v).replace(",", "."));
+function taxCheck(row) {
+  const [rate, base, amount] = [num(row.rate), num(row.base), num(row.amount)];
+  if (rate === null || base === null || amount === null) return "not checkable (a value is null)";
+  const want = Math.round(base * rate) / 100;  // cents
+  const ok = Math.abs(want - amount) <= 0.0101;
+  return `${base.toFixed(2)} × ${rate}% = ${want.toFixed(2)} ${ok ? "✓" : "✗ (≠ " + amount.toFixed(2) + ")"}`;
+}
+function renderTax(fx, r) {
+  const e = fx.expected, rows = e.tax_breakdown || [];
+  const val = (p, orig) => p in (r.edits || {}) ? show(r.edits[p]) : show(orig);
+  const rowHtml = rows.map((row, i) => {
+    const cell = k => { const p = `tax_breakdown[${i}].${k}`; return box(p, val(p, row[k]), row[k], "null", false); };
+    return `<div class="line" data-row="${i}"><div class="lnum">row #${i}</div>
+      <div class="nums"><span>rate %</span>${cell("rate")}<span>base</span>${cell("base")}<span>tax</span>${cell("amount")}</div>
+      <div class="alt" data-check="${i}"></div></div>`;
+  }).join("");
+  document.getElementById("form").innerHTML = `
+    <p class="desc"><b>${fx.id}</b> · tax table only (the rest of this label is already verified)</p>
+    <p class="note">${GLOSSARY}</p>
+    <p class="note"><b>Claude read it as:</b> ${fx.printed_as || ""}</p>
+    <div class="grid"><label>Tax (total)</label><div>${show(e.tax) || "null"}</div>
+      <label>Total</label><div>${show(e.total)}</div>
+      <label>Prices incl. tax</label><div>${show(e.prices_include_tax) || "null"}</div></div>
+    <h2>Tax table (${rows.length} row${rows.length === 1 ? "" : "s"}) — compare with the photo</h2>
+    ${rowHtml}
+    <p class="fp" id="sums"></p>
+    <textarea id="comment" placeholder="Anything else? e.g. a row is missing (optional)">${r.comment || ""}</textarea>
+    <div class="actions">
+      <button class="primary" id="confirm">Confirm (save edits) &amp; next →</button>
+      <button class="secondary" id="reset">Reset my edits</button>
+      <span class="status" id="saved">${r.status ? "Saved: " + r.status + (r.status === "edited" ? ` (${Object.keys(r.edits).length} change(s))` : "") : "Not reviewed yet"}</span>
+    </div>`;
+  const refresh = () => {
+    const cur = rows.map((_, i) => Object.fromEntries(["rate", "base", "amount"].map(k =>
+      [k, document.querySelector(`[data-path="tax_breakdown[${i}].${k}"]`).value])));
+    cur.forEach((row, i) => document.querySelector(`[data-check="${i}"]`).textContent = taxCheck(row));
+    const amounts = cur.map(c => num(c.amount)), bases = cur.map(c => num(c.base));
+    const sum = a => a.reduce((s, x) => s + x, 0);
+    const parts = [];
+    if (!amounts.includes(null) && e.tax !== null) parts.push(`rows' tax sum ${sum(amounts).toFixed(2)} vs tax ${e.tax} ${Math.abs(sum(amounts) - num(e.tax)) <= 0.0101 ? "✓" : "✗"}`);
+    if (!amounts.includes(null) && !bases.includes(null)) parts.push(`bases + tax ${(sum(bases) + sum(amounts)).toFixed(2)} vs total ${e.total} ${Math.abs(sum(bases) + sum(amounts) - num(e.total)) <= 0.0101 ? "✓" : "✗"}`);
+    document.getElementById("sums").textContent = parts.join(" · ");
+  };
+  document.querySelectorAll("#form [data-path]").forEach(el => {
+    const mark = () => { el.classList.toggle("changed", el.value !== el.dataset.orig); refresh(); };
+    el.addEventListener("input", mark); mark();
+  });
+  document.getElementById("confirm").onclick = confirmCurrent;
+  document.getElementById("reset").onclick = () => { delete results[fx.id]; save(); render(); };
+  renderChips();
+}
+
 function render() {
   const fx = fixtures[current], e = fx.expected, r = results[fx.id] || {};
   document.getElementById("img").src = fx.image;
+  if (fx.review_focus === "tax_breakdown") return renderTax(fx, r);
   const alts = fx.alternatives || {};
   const altLine = p => alts[p] ? `<div class="alt">also accepted: ${alts[p].map(a => a === null ? "null" : `“${a}”`).join(", ")}</div>` : "";
   const val = (p, orig) => p in (r.edits || {}) ? show(r.edits[p]) : show(orig);
@@ -204,7 +260,15 @@ document.getElementById("export").onclick = () => {
 document.getElementById("copy").onclick = () => navigator.clipboard?.writeText(document.getElementById("dlgtext").value);
 document.getElementById("close").onclick = () => document.getElementById("dlg").close();
 
-fetch("fixtures.json").then(r => r.json()).then(data => { fixtures = data; render(); });
+fetch("fixtures.json").then(r => r.json()).then(data => {
+  fixtures = data;
+  const focus = data[0]?.review_focus;
+  if (focus) {
+    KEY = `label-review-${focus}-v1`;
+    try { results = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { results = {}; }
+  }
+  render();
+});
 </script>
 </body>
 </html>

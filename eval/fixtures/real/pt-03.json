@@ -41,6 +41,18 @@
     ],
     "subtotal": null,
     "tax": "0.94",
+    "tax_breakdown": [
+      {
+        "rate": "13",
+        "base": "2.57",
+        "amount": "0.33"
+      },
+      {
+        "rate": "23",
+        "base": "2.63",
+        "amount": "0.61"
+      }
+    ],
     "discount": null,
     "total": "6.14",
     "prices_include_tax": true
@@ -61,5 +73,7 @@
   "check_false_positives": [],
   "notes": "AMBIGUOUS: line prices are gross (sum to 6.14), but it also prints 'Valor Liquido 5,20' + 'Total de Imposto 0,94' = 6,14. Both (true, subtotal null) and (false, subtotal 5.20) are self-consistent readings.",
   "verified_by": "Vidit",
-  "verified_at": "2026-11-10T06:03:55Z"
+  "verified_at": "2026-11-10T06:03:55Z",
+  "tax_breakdown_verified_by": "Vidit",
+  "tax_breakdown_verified_at": "2026-11-11T05:44:06Z"
 }

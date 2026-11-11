@@ -77,6 +77,18 @@
     ],
     "subtotal": null,
     "tax": "3.18",
+    "tax_breakdown": [
+      {
+        "rate": "6",
+        "base": "4.50",
+        "amount": "0.27"
+      },
+      {
+        "rate": "23",
+        "base": "12.63",
+        "amount": "2.91"
+      }
+    ],
     "discount": null,
     "total": "20.31",
     "prices_include_tax": true
@@ -119,5 +131,7 @@
   "check_false_positives": [],
   "notes": "Head-office address in the header is very faint; store address (or null) accepted too. Unit price isn't printed (qty 1), so null or the line amount are both fine. 'C'/'A' after qty are tax classes, not units. tax = 0.27 + 2.91.",
   "verified_by": "Vidit",
-  "verified_at": "2026-11-10T06:14:24Z"
+  "verified_at": "2026-11-10T06:14:24Z",
+  "tax_breakdown_verified_by": "Vidit",
+  "tax_breakdown_verified_at": "2026-11-11T05:45:12Z"
 }

@@ -41,6 +41,13 @@
     ],
     "subtotal": null,
     "tax": "2.73",
+    "tax_breakdown": [
+      {
+        "rate": "23",
+        "base": "11.87",
+        "amount": "2.73"
+      }
+    ],
     "discount": null,
     "total": "14.60",
     "prices_include_tax": false
@@ -57,5 +64,7 @@
   "check_false_positives": [],
   "notes": "Same country as the others, opposite convention: lines are net (sum 11.87 = Incidencia), + IVA 2.73 = 14.60. Review: reviewer first set prices_include_tax=true; kept false after checking that lines sum to the printed Incidencia (11,87) and IVA is added to reach 14,60.",
   "verified_by": "Vidit",
-  "verified_at": "2026-11-10T06:09:25Z"
+  "verified_at": "2026-11-10T06:09:25Z",
+  "tax_breakdown_verified_by": "Vidit",
+  "tax_breakdown_verified_at": "2026-11-11T05:44:39Z"
 }

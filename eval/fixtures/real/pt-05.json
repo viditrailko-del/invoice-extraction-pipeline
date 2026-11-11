@@ -41,6 +41,13 @@
     ],
     "subtotal": "13.70",
     "tax": "2.41",
+    "tax_breakdown": [
+      {
+        "rate": "23",
+        "base": "10.50",
+        "amount": "2.41"
+      }
+    ],
     "discount": "0.79",
     "total": "12.91",
     "prices_include_tax": true
@@ -72,5 +79,7 @@
   ],
   "notes": "The 20% discount applies to one line (MALA 3.95 -> 3.16), so qty x price != amount there and the lines (12.91) don't sum to the printed Sub Total (13.70, pre-discount). The document is correct: these are check false positives.",
   "verified_by": "Vidit",
-  "verified_at": "2026-11-10T06:06:53Z"
+  "verified_at": "2026-11-10T06:06:53Z",
+  "tax_breakdown_verified_by": "Vidit",
+  "tax_breakdown_verified_at": "2026-11-11T05:44:31Z"
 }

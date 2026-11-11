@@ -41,6 +41,13 @@
     ],
     "subtotal": null,
     "tax": null,
+    "tax_breakdown": [
+      {
+        "rate": "13",
+        "base": null,
+        "amount": null
+      }
+    ],
     "discount": null,
     "total": "12.50",
     "prices_include_tax": true
@@ -57,5 +64,7 @@
   "check_false_positives": [],
   "notes": "Only the rate (13%) is printed, not the tax amount: tax must be null, not computed.",
   "verified_by": "Vidit",
-  "verified_at": "2026-11-10T06:15:24Z"
+  "verified_at": "2026-11-10T06:15:24Z",
+  "tax_breakdown_verified_by": "Vidit",
+  "tax_breakdown_verified_at": "2026-11-11T05:45:20Z"
 }

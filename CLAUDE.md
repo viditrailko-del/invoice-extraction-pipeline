@@ -129,7 +129,7 @@ docker compose run --rm -T api uv run --frozen python -m eval.run score latest  
 - `tests/test_fixtures.py` validates every fixture. If you change a check or the schema, regenerate the fixtures.
 - Discount `expected` keeps the printed sign (`-107.48` if printed negative); the eval should compare discount by absolute value.
 - **Real fixtures** (`eval/fixtures/real/pt-01..10.json`): 10 Portuguese receipts, full labels (line items included), each human-verified (`verified_by`). Images are not in git: run `python -m scripts.fetch_real_fixtures` (downloads from Zenodo once, verifies md5 + per-image sha256).
-  - Real labels have **no `tax_breakdown` key yet** (labeled before prompt v3): the eval skips the field and `test_fixtures` tolerates its absence. Adding it needs the usual human review; then drop the tolerance.
+  - `tax_breakdown` was added to the real labels later (drafted from the photos, every row checked by its own arithmetic, then reviewed alone with `python -m scripts.prepare_label_review --drafts <file>`): `tax_breakdown_verified_by/_at`. pt-08 prints only a per-line 13% and no table → one row `{rate: 13, base: null, amount: null}`. A list key missing from a label is skipped by the eval (for future fields).
   - Real-fixture semantics: `expected_flags` is `[]` (the documents are correct). `check_false_positives` records what our checks wrongly raise on the TRUE data; it's asserted, so it stays visible. Currently only pt-05 (a line-level discount breaks `line_math` and `subtotal_mismatch`).
   - `alternatives` = other acceptable answers per field path (trading vs legal name, "Consumidor final", ambiguous readings). Phase 5 must accept them.
   - `as_of` = invoice date + 7 days, so old receipts don't trigger the 2-year warning.

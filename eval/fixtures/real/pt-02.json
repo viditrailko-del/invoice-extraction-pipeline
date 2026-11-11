@@ -53,6 +53,18 @@
     ],
     "subtotal": null,
     "tax": "3.11",
+    "tax_breakdown": [
+      {
+        "rate": "23",
+        "base": "12.89",
+        "amount": "2.96"
+      },
+      {
+        "rate": "6",
+        "base": "2.55",
+        "amount": "0.15"
+      }
+    ],
     "discount": null,
     "total": "18.55",
     "prices_include_tax": true
@@ -66,5 +78,7 @@
   "check_false_positives": [],
   "notes": "'Pequero' is a typo on the receipt itself (Pequeno); labeled as printed. tax = 2.96 (23%) + 0.15 (6%) = 3.11. The 23% IVA digit is smudged and looks like '2,56', but the row's own arithmetic fixes it: base 12,89 + IVA = 15,85 -> 2,96 (15,85 / 1.23 = 12,89). Review: dataset said 0.15, first draft 2.71, reviewer 2.70 (the 6% row's Valor Total); settled on 3.11 by arithmetic.",
   "verified_by": "Vidit",
-  "verified_at": "2026-11-10T06:01:58Z"
+  "verified_at": "2026-11-10T06:01:58Z",
+  "tax_breakdown_verified_by": "Vidit",
+  "tax_breakdown_verified_at": "2026-11-11T05:43:52Z"
 }

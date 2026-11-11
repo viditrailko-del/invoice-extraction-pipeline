@@ -95,6 +95,18 @@
     ],
     "subtotal": null,
     "tax": "8.72",
+    "tax_breakdown": [
+      {
+        "rate": "6",
+        "base": "106.06",
+        "amount": "6.36"
+      },
+      {
+        "rate": "23",
+        "base": "10.28",
+        "amount": "2.36"
+      }
+    ],
     "discount": null,
     "total": "125.06",
     "prices_include_tax": true
@@ -112,5 +124,7 @@
   "check_false_positives": [],
   "notes": "tax = 6.36 (6%) + 2.36 (23%).",
   "verified_by": "Vidit",
-  "verified_at": "2026-11-10T06:18:56Z"
+  "verified_at": "2026-11-10T06:18:56Z",
+  "tax_breakdown_verified_by": "Vidit",
+  "tax_breakdown_verified_at": "2026-11-11T05:45:44Z"
 }
