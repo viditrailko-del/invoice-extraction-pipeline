@@ -1,5 +1,7 @@
 # Invoice Extraction Pipeline
 
+[![tests](https://github.com/viditrailko-del/invoice-extraction-pipeline/actions/workflows/tests.yml/badge.svg)](https://github.com/viditrailko-del/invoice-extraction-pipeline/actions/workflows/tests.yml)
+
 A backend service that turns invoice PDFs and photos into validated, structured data
 with an LLM (Gemini), and is built to be **safe when the LLM is wrong**.
 
@@ -7,6 +9,10 @@ The LLM call is the easy part. This project is about the reliability layer aroun
 every number is re-checked in code, every answer is stored before it's parsed, every
 human correction is audited, and an eval harness measures how often a wrong extraction
 would slip through unnoticed.
+
+Built with [Claude Code](https://claude.com/claude-code) as a pair programmer. I made
+the design and scope decisions, verified the real-receipt labels by hand, and reviewed
+the changes.
 
 ## How it works
 
@@ -108,6 +114,60 @@ Run `20261111-061513-v3`: `gemini-3.5-flash-lite`, prompt v3, all 41 fixtures.
   fixtures.
 - 41 invoices is a small sample, and the real receipts are all Portuguese.
 
+### Sample output
+
+Both taken from the saved answers of the run above; no new API calls.
+
+**Approved** (`syn-001`, a synthetic UK invoice, 1.9 s, $0.0014). Every number re-checks
+in code (3 × line math, 1377.95 + 275.59 = 1653.54, a valid GB VAT check digit), so it
+has zero flags:
+
+```json
+{
+  "invoice_number": "NW-2026-3800",
+  "invoice_date": "2026-10-31",
+  "due_date": "2026-11-14",
+  "vendor": {"name": "Northwind Cloud Services Ltd.", "tax_id": "GB123456727", "...": "..."},
+  "currency": "GBP",
+  "line_items": [
+    {"description": "Database instance db.m5", "quantity": "1",   "unit_price": "246.03", "amount": "246.03"},
+    {"description": "Domain renewal",          "quantity": "5",   "unit_price": "14.99",  "amount": "74.95"},
+    {"description": "Support hours",           "quantity": "9.5", "unit_price": "111.26", "amount": "1056.97"}
+  ],
+  "subtotal": "1377.95",
+  "tax": "275.59",
+  "tax_breakdown": [{"rate": "20", "base": null, "amount": "275.59"}],
+  "total": "1653.54",
+  "prices_include_tax": false
+}
+```
+→ `status: approved`, `flags: []`
+
+**Flagged** (`pt-02`, a real phone photo of a Portuguese bakery receipt). The model
+misread two smudged digits. Both answers look plausible, and the receipt's total still
+adds up, but the checks catch them:
+
+```json
+{
+  "vendor": {"name": "Nova Gama Gourmet SA", "tax_id": "501415926"},
+  "tax": "2.71",
+  "tax_breakdown": [
+    {"rate": "23", "base": "12.89", "amount": "2.96"},
+    {"rate": "6",  "base": "2.55",  "amount": "0.15"}
+  ],
+  "total": "18.55",
+  "prices_include_tax": true
+}
+```
+→ `status: needs_review`
+
+| code | field | reason |
+|---|---|---|
+| `tax_breakdown_mismatch` | `tax` | Tax rows sum to 3.11, but tax is 2.71 |
+| `tax_id_invalid` | `vendor.tax_id` | 501415926 fails the check digit of a NIF (Portuguese VAT number): likely a misread digit |
+
+Both flags point at real errors: the printed values are 3.11 and 501419926.
+
 ### What the eval found, and what changed
 
 Each fix below was found by the harness, then verified by it.
@@ -193,3 +253,7 @@ licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 The images are not redistributed here because they show a private buyer's tax number.
 `python -m scripts.fetch_real_fixtures` downloads them and verifies their checksums.
 The labels in `eval/fixtures/real/` are our own and were checked by hand.
+
+## License
+
+Code: [MIT](LICENSE). The receipt dataset keeps its own CC BY 4.0 license (see above).
