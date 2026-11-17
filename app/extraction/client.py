@@ -5,6 +5,7 @@ fake extractor and never call the real API (CLAUDE.md rule: tests never hit Gemi
 """
 
 import io
+import logging
 import re
 import time
 from dataclasses import dataclass
@@ -13,6 +14,21 @@ from typing import Any, Protocol
 import httpx
 from google import genai
 from google.genai import errors, types
+
+from app.logging_setup import log_event
+
+try:  # google-genai 3.x sends requests through httpx2, a separate package: its errors are NOT httpx errors.
+    import httpx2
+except ImportError:  # pragma: no cover - older SDKs use plain httpx
+    httpx2 = httpx
+
+log = logging.getLogger(__name__)
+
+# Network-level failures from either HTTP library. Catching only httpx's let a "Server
+# disconnected" (httpx2.RemoteProtocolError) escape as a raw exception: a 500 instead of
+# extraction_failed (rule 8). Found in the sibling support_agent_project's eval run.
+TIMEOUT_ERRORS = (httpx.TimeoutException, httpx2.TimeoutException)
+TRANSPORT_ERRORS = (httpx.TransportError, httpx2.TransportError)
 
 # Gemini rejects inline requests above ~20 MB; base64 adds ~33%, so upload anything
 # bigger than this through the Files API instead of sending the bytes inline.
@@ -97,8 +113,17 @@ class GeminiExtractor:
                 transient=is_transient(e.code, str(e)),
                 latency_ms=_ms_since(start),
             ) from e
-        except httpx.TimeoutException as e:
+        except TIMEOUT_ERRORS as e:
             raise LLMError("timeout", transient=True, latency_ms=_ms_since(start)) from e
+        except TRANSPORT_ERRORS as e:  # network down, DNS failure, server disconnected: retryable
+            raise LLMError(
+                f"network: {type(e).__name__}: {e}"[:500], transient=True, latency_ms=_ms_since(start)
+            ) from e
+        except Exception as e:  # anything else the SDK throws must still end extraction_failed (rule 8)
+            log_event(log, logging.ERROR, "llm_unexpected_error", model=model, error=type(e).__name__, exc_info=True)
+            raise LLMError(
+                f"unexpected: {type(e).__name__}: {e}"[:500], transient=False, latency_ms=_ms_since(start)
+            ) from e
         finally:
             if uploaded is not None:
                 try:
