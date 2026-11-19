@@ -206,6 +206,10 @@ Mirrors `../support_agent_project` Phase 8. Everything under `/demo/*` and the p
   `DATABASE_URL` accepts `postgres://`/`postgresql://` (Neon) and switches to psycopg. Account steps:
   `demo/DEPLOY.md`. `python demo/check_deploy.py <url>` (stdlib) checks the page, guards and every scenario; CI runs
   it on the prod image booted on a fresh database. Rehearsed locally 2026-11-19: 13/13, restart, token reset.
+- **Deployed 2026-11-19**: https://invoice-extraction-demo.onrender.com (Render free, virginia; database
+  `invoices` in the support demo's Neon project, direct connection; Gemini key shared with the other demos, so
+  their flash-lite daily quota is shared too). Checked from outside: check_deploy 13/13 + guards (~16 s for
+  all), one live generate (planted total) -> needs_review total_mismatch, flash-lite 6.6 s, $0.0015.
 - The free host's disk is wiped on restart: uploaded/generated documents then answer 410 (the extraction stays).
   The per-IP cap trusts X-Forwarded-For (spoofable); the daily cap is what protects the quota.
 
@@ -222,7 +226,7 @@ Build in phase order. Don't add queues, auth, S3, or a frontend until the eval h
 | 4 | Review endpoints: list flagged, PATCH corrections w/ audit | done |
 | 5 | Eval harness: field accuracy, flag precision/recall, cost/latency | done (flash-lite on all 41; flash on the 10 real: run `20261111-113016-v3-merged`) |
 | 6 | Hardening: logging, Dockerfile, README with real eval numbers, CI | done |
-| 7 | Public live demo (replay, capped live, page, reset, Render + Neon) | built + rehearsed locally; deploy = account steps in `demo/DEPLOY.md`, then check from outside |
+| 7 | Public live demo (replay, capped live, page, reset, Render + Neon) | done (https://invoice-extraction-demo.onrender.com, checked from outside 2026-11-19) |
 
 Update the Status column when a phase is done.
 
