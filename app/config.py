@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,6 +30,16 @@ class Settings(BaseSettings):
     demo_live_daily_limit: int = 20  # live extractions per UTC day for the whole demo (free tier)
     demo_live_per_ip_per_hour: int = 3
     demo_reset_token: str = ""  # POST /demo/reset (nightly); empty = route off
+
+    @field_validator("database_url")
+    @classmethod
+    def _psycopg_driver(cls, v: str) -> str:
+        # Hosted Postgres (Neon, Render) hands out postgres:// or postgresql:// URLs; SQLAlchemy would pick
+        # psycopg2, which isn't installed. Same database, our driver.
+        for prefix in ("postgres://", "postgresql://"):
+            if v.startswith(prefix):
+                return "postgresql+psycopg://" + v[len(prefix):]
+        return v
 
 
 @lru_cache

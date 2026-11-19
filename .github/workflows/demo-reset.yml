@@ -1,0 +1,32 @@
+# Nightly reset of the public demo: deletes every visitor's invoices and uploaded/generated files.
+# Needs the repository VARIABLE DEMO_URL (e.g. https://invoice-extraction-demo.onrender.com) and the
+# SECRET DEMO_RESET_TOKEN (the value Render generated). Without DEMO_URL the job is skipped.
+# Note: GitHub pauses scheduled workflows after 60 days without commits; re-enable it in the Actions tab.
+name: demo-reset
+
+on:
+  schedule:
+    - cron: "5 0 * * *"  # 00:05 UTC, right after the live quota's day rolls over
+  workflow_dispatch:
+
+jobs:
+  reset:
+    if: vars.DEMO_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      URL: ${{ vars.DEMO_URL }}
+      TOKEN: ${{ secrets.DEMO_RESET_TOKEN }}
+    steps:
+      # A free instance sleeps when idle and takes up to a minute or so to boot.
+      - name: Wake the demo
+        run: |
+          for i in $(seq 1 10); do
+            curl -fsS --max-time 60 "$URL/health" && exit 0
+            sleep 15
+          done
+          exit 1
+
+      - name: Reset
+        run: |
+          curl -fsS --max-time 120 -X POST "$URL/demo/reset" -H "X-Reset-Token: $TOKEN"

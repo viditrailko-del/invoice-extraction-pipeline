@@ -42,6 +42,8 @@ COPY --from=prod-deps /opt/venv /opt/venv
 COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
+# The public demo's start command (render.yaml): migrations, then the API on $PORT.
+COPY docker/demo-start.sh ./docker/
 # Uploaded files live here: mount a volume on it in production.
 RUN mkdir -p /app/storage && chown app:app /app/storage
 USER app

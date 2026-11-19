@@ -6,7 +6,10 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+import hmac
+import logging
+
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request, status
 from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -18,6 +21,8 @@ from app.db.session import get_db
 from app.demo import live
 from app.demo.generate import PLANT_CHOICES, generate
 from app.demo.replay import replay, scenarios
+from app.demo.reset import reset_demo
+from app.logging_setup import log_event
 from app.demo.sandbox import Sandbox
 from app.extraction.client import Extractor
 from app.extraction.deps import get_extractor, get_session_factory
@@ -31,6 +36,7 @@ def demo_enabled(settings: Annotated[Settings, Depends(get_settings)]) -> None:
 
 
 router = APIRouter(prefix="/demo", tags=["demo"], dependencies=[Depends(demo_enabled)])
+log = logging.getLogger(__name__)
 
 Db = Annotated[Session, Depends(get_db)]
 Cfg = Annotated[Settings, Depends(get_settings)]
@@ -100,7 +106,21 @@ def demo_status(db: Db, settings: Cfg) -> DemoStatus:
     )
 
 
-@router.post("/generate", response_model=GenerateOut, status_code=status.HTTP_201_CREATED,
+@router.post("/reset", include_in_schema=False)
+def reset(db: Db, settings: Cfg, x_reset_token: Annotated[str, Header()] = "") -> dict[str, int]:
+    """Nightly (GitHub Actions): delete every visitor's invoices and files. Needs X-Reset-Token."""
+    if not settings.demo_reset_token:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not Found")
+    if not hmac.compare_digest(x_reset_token.encode(), settings.demo_reset_token.encode()):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "bad reset token")
+    # The live quota's in-memory count is kept: today's runs are deleted here, so a re-read would hand out a fresh
+    # day if this ran mid-day (the nightly run is at 00:05 UTC, right after the day rolls over anyway).
+    result = reset_demo(db, settings)
+    log_event(log, logging.INFO, "demo_reset", **result)
+    return result
+
+
+@router.post("/generate",response_model=GenerateOut, status_code=status.HTTP_201_CREATED,
              responses={429: {"description": "Live quota used up"}})
 def generate_invoice(body: GenerateIn, request: Request, background: BackgroundTasks, sandbox: Sandbox, db: Db,
                      settings: Cfg, session_factory: SessionFactory,

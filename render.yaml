@@ -1,0 +1,24 @@
+# Render Blueprint for the public demo (free web service). The database is a free Neon Postgres: paste its
+# connection string as DATABASE_URL when Render asks (postgres:// or postgresql:// both work).
+# Step by step: demo/DEPLOY.md.
+services:
+  - type: web
+    name: invoice-extraction-demo
+    runtime: docker
+    plan: free
+    region: virginia                      # US East: create the Neon database in AWS US East too (can't be changed later)
+    dockerfilePath: ./Dockerfile          # the prod stage: runtime deps only, non-root
+    dockerCommand: sh docker/demo-start.sh  # migrations, then the API on $PORT
+    healthCheckPath: /health
+    autoDeploy: true                      # every push to main redeploys
+    envVars:
+      - key: DEMO_MODE
+        value: "true"
+      - key: MAX_UPLOAD_MB
+        value: "5"
+      - key: DATABASE_URL
+        sync: false                       # asked for at setup: the Neon connection string
+      - key: GEMINI_API_KEY
+        sync: false                       # asked for at setup: a free-tier key with billing OFF
+      - key: DEMO_RESET_TOKEN
+        generateValue: true               # random; copy it into the GitHub secret DEMO_RESET_TOKEN
