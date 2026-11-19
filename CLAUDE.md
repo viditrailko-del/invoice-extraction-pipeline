@@ -198,8 +198,10 @@ Mirrors `../support_agent_project` Phase 8. Everything under `/demo/*` and the p
   calls. A failed extraction shows as "Stopped safely" with a plain reason. Preview: `.claude/launch.json` `demo`
   (port 8004).
 - **Reset** (`app/demo/reset.py`, `POST /demo/reset` with `X-Reset-Token` = `DEMO_RESET_TOKEN`, empty = route off;
-  `python -m demo.reset` locally): deletes every sandboxed invoice and its files under UPLOAD_DIR (scenario files
-  stay). Keeps the in-memory live count (re-reading after deleting today's runs would hand out a fresh day).
+  `python -m demo.reset` locally): deletes sandboxed invoices from before today UTC (none created or extracted
+  today) and their files under UPLOAD_DIR unless a remaining invoice shares the file (named by hash); scenario
+  files stay. Today's rows stay because the live quota is re-counted from today's runs after a restart:
+  **found on the deploy** (first reset deleted everything, then the redeploy re-counted 0 used -> 20 left).
   Nightly `.github/workflows/demo-reset.yml` 00:05 UTC (variable DEMO_URL + secret DEMO_RESET_TOKEN).
 - **Deploy**: `render.yaml` (free Docker, prod stage, region virginia next to Neon US East) runs
   `sh docker/demo-start.sh` = migrations + `fastapi run` on $PORT with proxy headers (FORWARDED_ALLOW_IPS='*').
