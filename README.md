@@ -14,6 +14,31 @@ Built with [Claude Code](https://claude.com/claude-code) as a pair programmer. I
 the design and scope decisions, verified the real-receipt labels by hand, and reviewed
 the changes.
 
+## Try it: live demo
+
+**https://invoice-extraction-demo.onrender.com**
+
+- **Recorded invoices** (no AI call, instant): 13 synthetic invoices from the eval, replayed with flash-lite's
+  real recorded answers through the live validation, checks and duplicate detection. Four clean ones, eight
+  with a planted mistake the checks catch (wrong total, line math, a smudged VAT row, the same invoice sent
+  twice...), and one where Gemini was rate-limited and the retry recovered. Flagged invoices can be corrected
+  or accepted: you are the reviewer, and every change lands in the audit trail.
+- **Try it live** (real Gemini flash-lite): upload your own PDF or photo, or generate a fresh synthetic invoice
+  with a mistake of your choice planted in it, and compare what was printed with what the model read and what
+  the checks found.
+
+It's a free instance: the first visit after a quiet spell takes about a minute to wake up. Live mode is capped
+(20 extractions a day for everyone, 3 an hour per visitor) to fit the free Gemini tier. When Gemini is
+overloaded, an extraction stops safely and the page says so. Each visitor works in their own sandbox, and
+everything is deleted nightly.
+
+How it's built (all behind `DEMO_MODE`, [app/demo/](app/demo/)): replays use a recorded LLM client that refuses
+to improvise (a different file, prompt or response schema ends the invoice `extraction_failed` instead of showing
+an answer to a question the model was never asked), and the date checks run as of the day the recording was
+scored, so a replay gives the same flags next year. Hosting: Render (Docker, [render.yaml](render.yaml)) + Neon
+Postgres, a nightly reset from GitHub Actions, and CI boots the demo on a fresh database and replays every
+recorded invoice on each push. Setup steps: [demo/DEPLOY.md](demo/DEPLOY.md).
+
 ## How it works
 
 ```mermaid

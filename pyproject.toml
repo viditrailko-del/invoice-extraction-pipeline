@@ -12,13 +12,13 @@ dependencies = [
     "python-multipart>=0.0.12",
     "google-genai>=3.0.0",
     "python-stdnum>=2.2",
+    "reportlab>=5.1.0",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.3",
     "httpx>=0.28",
-    "reportlab>=5.1.0",
     "pypdfium2>=5.15.2",
 ]
 

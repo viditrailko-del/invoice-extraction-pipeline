@@ -1,0 +1,46 @@
+{
+ "name": "syn-031",
+ "order": 10,
+ "group": "Planted mistakes",
+ "title": "One VAT row is wrong",
+ "blurb": "One row of the VAT table doesn't equal base x rate, and the bases plus tax no longer add up to the total. Both tax checks fire.",
+ "fixture": "syn-031",
+ "file": "syn-031.jpg",
+ "content_type": "image/jpeg",
+ "as_of": "2026-11-10",
+ "depends_on": [],
+ "recorded": {
+  "run_id": "20261111-061513-v3",
+  "model": "gemini-3.5-flash-lite",
+  "prompt_version": "v3",
+  "prompt_sha256": "d1bc15c4be2523b6d22eaa7557522995a4f4a5c582bc506bf8b12af3b3388201",
+  "prompt_chars": 2066,
+  "schema_sha": "596f21383ab6",
+  "file_sha256": "0fea04216292314beecc2dd14f7a63e8171b57c98fb9fec005d86460014c8b60",
+  "calls": [
+   {
+    "raw_response": "{\n  \"invoice_number\": \"FS 2026/01888\",\n  \"invoice_date\": \"2026-10-31\",\n  \"due_date\": null,\n  \"vendor\": {\n    \"name\": \"Mercearia Flor do Mondego, Lda.\",\n    \"address\": \"Rua Ferreira Borges 41 3000-180 Coimbra, Portugal\",\n    \"tax_id\": \"PT509876544\"\n  },\n  \"bill_to_name\": null,\n  \"currency\": \"EUR\",\n  \"line_items\": [\n    {\n      \"description\": \"Pilhas AA (pack 4)\",\n      \"quantity\": 1,\n      \"unit_price\": 4.51,\n      \"amount\": 4.51\n    },\n    {\n      \"description\": \"Pão de forma\",\n      \"quantity\": 1,\n      \"unit_price\": 1.65,\n      \"amount\": 1.65\n    },\n    {\n      \"description\": \"Detergente roupa 3L\",\n      \"quantity\": 2,\n      \"unit_price\": 9.14,\n      \"amount\": 18.28\n    },\n    {\n      \"description\": \"Pão de forma\",\n      \"quantity\": 1,\n      \"unit_price\": 1.82,\n      \"amount\": 1.82\n    }\n  ],\n  \"subtotal\": null,\n  \"tax\": 4.06,\n  \"tax_breakdown\": [\n    {\n      \"rate\": 23,\n      \"base\": 18.53,\n      \"amount\": 3.86\n    },\n    {\n      \"rate\": 6,\n      \"base\": 3.27,\n      \"amount\": 0.20\n    }\n  ],\n  \"discount\": null,\n  \"total\": 26.26,\n  \"prices_include_tax\": true\n}",
+    "error": null,
+    "transient": false,
+    "latency_ms": 3862,
+    "input_tokens": 1667,
+    "output_tokens": 485,
+    "thinking_tokens": null
+   }
+  ]
+ },
+ "expected": {
+  "status": "needs_review",
+  "flags": [
+   [
+    "tax_base_mismatch",
+    "total"
+   ],
+   [
+    "tax_line_math",
+    "tax_breakdown[0].amount"
+   ]
+  ],
+  "flag_count": 2
+ }
+}

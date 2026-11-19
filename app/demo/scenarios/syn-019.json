@@ -1,0 +1,42 @@
+{
+ "name": "syn-019",
+ "order": 4,
+ "group": "Planted mistakes",
+ "title": "Total doesn't add up",
+ "blurb": "The printed total is wrong. Gemini copies it faithfully (that's its job); the total check recomputes subtotal + tax and sends the invoice to review instead of approving it.",
+ "fixture": "syn-019",
+ "file": "syn-019.pdf",
+ "content_type": "application/pdf",
+ "as_of": "2026-11-10",
+ "depends_on": [],
+ "recorded": {
+  "run_id": "20261111-061513-v3",
+  "model": "gemini-3.5-flash-lite",
+  "prompt_version": "v3",
+  "prompt_sha256": "d1bc15c4be2523b6d22eaa7557522995a4f4a5c582bc506bf8b12af3b3388201",
+  "prompt_chars": 2066,
+  "schema_sha": "596f21383ab6",
+  "file_sha256": "783e95f797c137b3d0e3b71cf89ed5d3dfa8f6953ff829fd37777ae0cb85a007",
+  "calls": [
+   {
+    "raw_response": "{\n  \"invoice_number\": \"RE-202607083\",\n  \"invoice_date\": \"2026-10-18\",\n  \"due_date\": \"2026-11-13\",\n  \"vendor\": {\n    \"name\": \"Kessler Maschinenbau GmbH\",\n    \"address\": \"Industriestraße 14 · 70565 Stuttgart, Deutschland\",\n    \"tax_id\": \"DE287451900\"\n  },\n  \"bill_to_name\": \"Fjordline Retail AS\",\n  \"currency\": \"EUR\",\n  \"line_items\": [\n    {\n      \"description\": \"Hydraulikzylinder HZ-40\",\n      \"quantity\": 1,\n      \"unit_price\": 223.99,\n      \"amount\": 223.99\n    },\n    {\n      \"description\": \"Kugellager 6204-2RS\",\n      \"quantity\": 26,\n      \"unit_price\": 6.29,\n      \"amount\": 163.54\n    },\n    {\n      \"description\": \"Dichtungssatz\",\n      \"quantity\": 13,\n      \"unit_price\": 10.43,\n      \"amount\": 135.59\n    }\n  ],\n  \"subtotal\": 523.12,\n  \"tax\": 99.39,\n  \"tax_breakdown\": [\n    {\n      \"rate\": 19,\n      \"base\": null,\n      \"amount\": 99.39\n    }\n  ],\n  \"discount\": null,\n  \"total\": 615.51,\n  \"prices_include_tax\": false\n}",
+    "error": null,
+    "transient": false,
+    "latency_ms": 1880,
+    "input_tokens": 1107,
+    "output_tokens": 430,
+    "thinking_tokens": null
+   }
+  ]
+ },
+ "expected": {
+  "status": "needs_review",
+  "flags": [
+   [
+    "total_mismatch",
+    "total"
+   ]
+  ],
+  "flag_count": 1
+ }
+}

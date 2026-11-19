@@ -25,7 +25,7 @@ CMD ["uv", "run", "--frozen", "fastapi", "dev", "app/main.py", "--host", "0.0.0.
 
 FROM base AS prod-deps
 COPY pyproject.toml uv.lock .python-version ./
-# --no-dev: no pytest/reportlab/pdfium in production. Bytecode compiled at build time.
+# --no-dev: no pytest/pdfium in production (reportlab is runtime: the demo draws invoices). Bytecode compiled at build time.
 RUN UV_COMPILE_BYTECODE=1 uv sync --frozen --no-dev --no-install-project
 
 
@@ -42,6 +42,8 @@ COPY --from=prod-deps /opt/venv /opt/venv
 COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
+# The public demo's start command (render.yaml): migrations, then the API on $PORT.
+COPY docker/demo-start.sh ./docker/
 # Uploaded files live here: mount a volume on it in production.
 RUN mkdir -p /app/storage && chown app:app /app/storage
 USER app

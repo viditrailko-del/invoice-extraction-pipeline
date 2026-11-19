@@ -10,6 +10,8 @@ and writes it to a results file. That way the eval measures exactly the code the
 runs, instead of a copy that could drift apart from it.
 """
 
+import hashlib
+import json
 import logging
 import time
 from collections.abc import Callable
@@ -73,6 +75,13 @@ def load_prompt(version: str) -> str:
 @lru_cache
 def response_schema() -> dict:
     return ExtractedInvoice.model_json_schema()
+
+
+def schema_fingerprint() -> str:
+    """Short hash of the response schema we send: it shapes answers like the prompt does, so eval
+    manifests and demo recordings store it."""
+    canonical = json.dumps(response_schema(), sort_keys=True).encode()
+    return hashlib.sha256(canonical).hexdigest()[:12]
 
 
 def extract_invoice(

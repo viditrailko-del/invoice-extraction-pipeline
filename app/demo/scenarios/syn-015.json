@@ -1,0 +1,46 @@
+{
+ "name": "syn-015",
+ "order": 12,
+ "group": "When Gemini fails",
+ "title": "Rate-limited, then retried",
+ "blurb": "The first call hit Gemini's per-minute limit (429). A per-minute limit is transient, so the pipeline retried with backoff and the second call answered. Both calls are stored.",
+ "fixture": "syn-015",
+ "file": "syn-015.pdf",
+ "content_type": "application/pdf",
+ "as_of": "2026-11-10",
+ "depends_on": [],
+ "recorded": {
+  "run_id": "20261111-061513-v3",
+  "model": "gemini-3.5-flash-lite",
+  "prompt_version": "v3",
+  "prompt_sha256": "d1bc15c4be2523b6d22eaa7557522995a4f4a5c582bc506bf8b12af3b3388201",
+  "prompt_chars": 2066,
+  "schema_sha": "596f21383ab6",
+  "file_sha256": "99718f578182dde53af3c4ade2ad23d0c30cb4c2579938e8fae24f4c0d50fac2",
+  "calls": [
+   {
+    "raw_response": null,
+    "error": "429: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://aistudio.google.com/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite, description: Generate content requests per minute limit exceed",
+    "transient": true,
+    "latency_ms": 353,
+    "input_tokens": null,
+    "output_tokens": null,
+    "thinking_tokens": null
+   },
+   {
+    "raw_response": "{\n  \"invoice_number\": \"MLL-09817\",\n  \"invoice_date\": \"2026-07-22\",\n  \"due_date\": \"2026-08-13\",\n  \"vendor\": {\n    \"name\": \"Maple Leaf Logistics Inc.\",\n    \"address\": \"220 King St W · Toronto, ON M5H 1K4, Canada\",\n    \"tax_id\": \"123456782RT0001\"\n  },\n  \"bill_to_name\": \"Rivière Bleue Événements\",\n  \"currency\": \"CAD\",\n  \"line_items\": [\n    {\n      \"description\": \"Pallet storage (per pallet/week)\",\n      \"quantity\": 47,\n      \"unit_price\": 6.65,\n      \"amount\": 312.55\n    },\n    {\n      \"description\": \"Pallet storage (per pallet/week)\",\n      \"quantity\": 24,\n      \"unit_price\": 10.8,\n      \"amount\": 259.2\n    },\n    {\n      \"description\": \"Customs brokerage\",\n      \"quantity\": 1,\n      \"unit_price\": 136.78,\n      \"amount\": 136.78\n    },\n    {\n      \"description\": \"Customs brokerage\",\n      \"quantity\": 1,\n      \"unit_price\": 126.09,\n      \"amount\": 126.09\n    }\n  ],\n  \"subtotal\": 834.62,\n  \"tax\": 92.23,\n  \"tax_breakdown\": [\n    {\n      \"rate\": 13,\n      \"base\": null,\n      \"amount\": 92.23\n    }\n  ],\n  \"discount\": 125.19,\n  \"total\": 801.66,\n  \"prices_include_tax\": false\n}",
+    "error": null,
+    "transient": false,
+    "latency_ms": 2316,
+    "input_tokens": 1107,
+    "output_tokens": 481,
+    "thinking_tokens": null
+   }
+  ]
+ },
+ "expected": {
+  "status": "approved",
+  "flags": [],
+  "flag_count": 0
+ }
+}

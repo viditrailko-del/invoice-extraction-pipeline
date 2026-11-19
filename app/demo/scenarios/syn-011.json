@@ -1,0 +1,37 @@
+{
+ "name": "syn-011",
+ "order": 1,
+ "group": "Clean invoices",
+ "title": "German invoice, scanned (JPG)",
+ "blurb": "A slightly blurred, tilted scan. Gemini reads the image; the same checks verify every number it returned, in code.",
+ "fixture": "syn-011",
+ "file": "syn-011.jpg",
+ "content_type": "image/jpeg",
+ "as_of": "2026-11-10",
+ "depends_on": [],
+ "recorded": {
+  "run_id": "20261111-061513-v3",
+  "model": "gemini-3.5-flash-lite",
+  "prompt_version": "v3",
+  "prompt_sha256": "d1bc15c4be2523b6d22eaa7557522995a4f4a5c582bc506bf8b12af3b3388201",
+  "prompt_chars": 2066,
+  "schema_sha": "596f21383ab6",
+  "file_sha256": "4e5281bee0e856e637c7c179dcd62e72994f3b8fdc9bb287cf5d8d132fc87651",
+  "calls": [
+   {
+    "raw_response": "{\n  \"invoice_number\": \"RE-202607710\",\n  \"invoice_date\": \"2026-08-31\",\n  \"due_date\": \"2026-09-21\",\n  \"vendor\": {\n    \"name\": \"Kessler Maschinenbau GmbH\",\n    \"address\": \"Industriestraße 14, 70565 Stuttgart, Deutschland\",\n    \"tax_id\": \"DE287451900\"\n  },\n  \"bill_to_name\": \"Acme Analytics Pvt Ltd\",\n  \"currency\": \"EUR\",\n  \"line_items\": [\n    {\n      \"description\": \"Montage (Std.)\",\n      \"quantity\": 9.5,\n      \"unit_price\": 71.63,\n      \"amount\": 680.49\n    },\n    {\n      \"description\": \"Hydraulikzylinder HZ-40\",\n      \"quantity\": 3.0,\n      \"unit_price\": 218.49,\n      \"amount\": 655.47\n    },\n    {\n      \"description\": \"Kugellager 6204-2RS\",\n      \"quantity\": 29.0,\n      \"unit_price\": 6.67,\n      \"amount\": 193.43\n    },\n    {\n      \"description\": \"Kugellager 6204-2RS\",\n      \"quantity\": 17.0,\n      \"unit_price\": 5.76,\n      \"amount\": 97.92\n    },\n    {\n      \"description\": \"Montage (Std.)\",\n      \"quantity\": 11.5,\n      \"unit_price\": 68.32,\n      \"amount\": 785.68\n    }\n  ],\n  \"subtotal\": 2412.99,\n  \"tax\": 458.47,\n  \"tax_breakdown\": [\n    {\n      \"rate\": 19.0,\n      \"base\": null,\n      \"amount\": 458.47\n    }\n  ],\n  \"discount\": null,\n  \"total\": 2871.46,\n  \"prices_include_tax\": false\n}",
+    "error": null,
+    "transient": false,
+    "latency_ms": 2639,
+    "input_tokens": 1667,
+    "output_tokens": 557,
+    "thinking_tokens": null
+   }
+  ]
+ },
+ "expected": {
+  "status": "approved",
+  "flags": [],
+  "flag_count": 0
+ }
+}

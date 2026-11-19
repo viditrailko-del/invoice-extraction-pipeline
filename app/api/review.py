@@ -14,6 +14,8 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.db.models import Correction, Invoice
 from app.db.session import get_db
+from app.api.invoices import get_owned
+from app.demo.sandbox import Sandbox
 from app.review import service
 from app.schemas.invoice import (
     CorrectionOut,
@@ -26,8 +28,10 @@ from app.schemas.invoice import (
 router = APIRouter(prefix="/invoices", tags=["review"])
 
 
-def _run(db: Session, invoice_id: uuid.UUID, action: Callable[[], Any]) -> InvoiceOut:
+def _run(db: Session, invoice_id: uuid.UUID, sandbox: str | None, action: Callable[[], Any]) -> InvoiceOut:
     """Run a review action, map domain errors to HTTP, return the fresh invoice."""
+    get_owned(db, invoice_id, sandbox)  # 404 for another visitor's invoice (demo mode)
+    db.rollback()  # end the read: the action locks the row itself (FOR UPDATE)
     try:
         action()
     except service.NotFound as e:
@@ -47,13 +51,14 @@ def _run(db: Session, invoice_id: uuid.UUID, action: Callable[[], Any]) -> Invoi
 
 @router.patch("/{invoice_id}", response_model=InvoiceOut)
 def correct_invoice(
-    invoice_id: uuid.UUID, body: CorrectionRequest, db: Session = Depends(get_db)
+    invoice_id: uuid.UUID, body: CorrectionRequest, sandbox: Sandbox, db: Session = Depends(get_db)
 ) -> InvoiceOut:
     """Correct one or more fields. All-or-nothing; checks re-run afterwards."""
     changes = [service.FieldChange(c.field_path, c.value) for c in body.changes]
     return _run(
         db,
         invoice_id,
+        sandbox,
         lambda: service.apply_corrections(
             db, invoice_id, changes, body.corrected_by, body.note, today=date.today()
         ),
@@ -65,30 +70,33 @@ def resolve_flag(
     invoice_id: uuid.UUID,
     flag_id: uuid.UUID,
     body: ResolveFlagRequest,
+    sandbox: Sandbox,
     db: Session = Depends(get_db),
 ) -> InvoiceOut:
     """Accept a flagged value as correct (e.g. a real credit note, not a duplicate)."""
     return _run(
         db,
         invoice_id,
+        sandbox,
         lambda: service.resolve_flag(db, invoice_id, flag_id, body.resolved_by, body.note),
     )
 
 
 @router.post("/{invoice_id}/reject", response_model=InvoiceOut)
 def reject_invoice(
-    invoice_id: uuid.UUID, body: RejectRequest, db: Session = Depends(get_db)
+    invoice_id: uuid.UUID, body: RejectRequest, sandbox: Sandbox, db: Session = Depends(get_db)
 ) -> InvoiceOut:
     return _run(
-        db, invoice_id, lambda: service.reject_invoice(db, invoice_id, body.rejected_by, body.reason)
+        db, invoice_id, sandbox, lambda: service.reject_invoice(db, invoice_id, body.rejected_by, body.reason)
     )
 
 
 @router.get("/{invoice_id}/corrections", response_model=list[CorrectionOut])
-def list_corrections(invoice_id: uuid.UUID, db: Session = Depends(get_db)) -> list[CorrectionOut]:
+def list_corrections(
+    invoice_id: uuid.UUID, sandbox: Sandbox, db: Session = Depends(get_db)
+) -> list[CorrectionOut]:
     """The audit trail: every human change, oldest first."""
-    if db.get(Invoice, invoice_id) is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Invoice not found")
+    get_owned(db, invoice_id, sandbox)
     rows = db.scalars(
         select(Correction)
         .where(Correction.invoice_id == invoice_id)

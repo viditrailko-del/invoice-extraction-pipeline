@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,6 +23,23 @@ class Settings(BaseSettings):
     recover_on_startup: bool = True  # re-run invoices stuck by a crash/restart
     log_format: str = "text"  # "json" in the production image: one JSON object per line
     log_level: str = "INFO"
+
+    # --- public demo (Phase 7; app/demo) ---
+    demo_mode: bool = False  # /demo/* routes and the demo page; every invoice lives in a visitor sandbox
+    demo_live_model: str = "gemini-3.5-flash-lite"  # live extractions only; no fallback model
+    demo_live_daily_limit: int = 20  # live extractions per UTC day for the whole demo (free tier)
+    demo_live_per_ip_per_hour: int = 3
+    demo_reset_token: str = ""  # POST /demo/reset (nightly); empty = route off
+
+    @field_validator("database_url")
+    @classmethod
+    def _psycopg_driver(cls, v: str) -> str:
+        # Hosted Postgres (Neon, Render) hands out postgres:// or postgresql:// URLs; SQLAlchemy would pick
+        # psycopg2, which isn't installed. Same database, our driver.
+        for prefix in ("postgres://", "postgresql://"):
+            if v.startswith(prefix):
+                return "postgresql+psycopg://" + v[len(prefix):]
+        return v
 
 
 @lru_cache

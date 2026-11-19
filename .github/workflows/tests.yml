@@ -9,7 +9,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      COMPOSE_PROJECT_NAME: invoice  # fixed network name (invoice_default), whatever the repo is called
     steps:
       - uses: actions/checkout@v4
 
@@ -25,6 +27,18 @@ jobs:
       - name: Build production image
         run: docker build -t invoice-api .
 
-      - name: Show Postgres logs on failure
+      # What Render runs (render.yaml): the start script on a brand-new database, a postgres:// URL as Neon gives
+      # it, then every recorded scenario must end where the eval scored it.
+      - name: Demo boots on a fresh database and replays every scenario
+        run: |
+          docker compose exec -T db psql -U invoice -d invoices -c "create database invoices_demo"
+          docker run -d --name demo --network invoice_default -p 8001:10000 -e PORT=10000 -e DEMO_MODE=true \
+            -e DATABASE_URL=postgres://invoice:invoice@db:5432/invoices_demo invoice-api sh docker/demo-start.sh
+          for i in $(seq 1 60); do curl -sf localhost:8001/health && break; sleep 1; done
+          python3 demo/check_deploy.py http://localhost:8001
+
+      - name: Show logs on failure
         if: failure()
-        run: docker compose logs db
+        run: |
+          docker compose logs db
+          docker logs demo || true

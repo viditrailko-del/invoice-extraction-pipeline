@@ -1,0 +1,37 @@
+{
+ "name": "syn-029",
+ "order": 3,
+ "group": "Clean invoices",
+ "title": "Portuguese receipt, prices include VAT",
+ "blurb": "Two VAT rates, tax already inside the prices. The model reports prices_include_tax, and the total check adds up the receipt the way it was printed.",
+ "fixture": "syn-029",
+ "file": "syn-029.pdf",
+ "content_type": "application/pdf",
+ "as_of": "2026-11-10",
+ "depends_on": [],
+ "recorded": {
+  "run_id": "20261111-061513-v3",
+  "model": "gemini-3.5-flash-lite",
+  "prompt_version": "v3",
+  "prompt_sha256": "d1bc15c4be2523b6d22eaa7557522995a4f4a5c582bc506bf8b12af3b3388201",
+  "prompt_chars": 2066,
+  "schema_sha": "596f21383ab6",
+  "file_sha256": "4b42fb9a5cd80ac1a5be5a28def195a2c027f44df6960f0c79212dea38b74131",
+  "calls": [
+   {
+    "raw_response": "{\n  \"invoice_number\": \"FS 2026/00169\",\n  \"invoice_date\": \"2026-10-14\",\n  \"due_date\": null,\n  \"vendor\": {\n    \"name\": \"Mercearia Flor do Mondego, Lda.\",\n    \"address\": \"Rua Ferreira Borges 41 · 3000-180 Coimbra, Portugal\",\n    \"tax_id\": \"PT509876544\"\n  },\n  \"bill_to_name\": null,\n  \"currency\": \"EUR\",\n  \"line_items\": [\n    {\n      \"description\": \"Detergente roupa 3L\",\n      \"quantity\": 2,\n      \"unit_price\": 7.45,\n      \"amount\": 14.90\n    },\n    {\n      \"description\": \"Leite meio-gordo 1L\",\n      \"quantity\": 2,\n      \"unit_price\": 0.93,\n      \"amount\": 1.86\n    },\n    {\n      \"description\": \"Detergente roupa 3L\",\n      \"quantity\": 1,\n      \"unit_price\": 8.56,\n      \"amount\": 8.56\n    },\n    {\n      \"description\": \"Azeite virgem extra 0,75L\",\n      \"quantity\": 1,\n      \"unit_price\": 6.74,\n      \"amount\": 6.74\n    },\n    {\n      \"description\": \"Detergente roupa 3L\",\n      \"quantity\": 1,\n      \"unit_price\": 7.15,\n      \"amount\": 7.15\n    }\n  ],\n  \"subtotal\": null,\n  \"tax\": 6.21,\n  \"tax_breakdown\": [\n    {\n      \"rate\": 23,\n      \"base\": 24.89,\n      \"amount\": 5.72\n    },\n    {\n      \"rate\": 6,\n      \"base\": 8.11,\n      \"amount\": 0.49\n    }\n  ],\n  \"discount\": null,\n  \"total\": 39.21,\n  \"prices_include_tax\": true\n}",
+    "error": null,
+    "transient": false,
+    "latency_ms": 3589,
+    "input_tokens": 1107,
+    "output_tokens": 550,
+    "thinking_tokens": null
+   }
+  ]
+ },
+ "expected": {
+  "status": "approved",
+  "flags": [],
+  "flag_count": 0
+ }
+}

@@ -1,0 +1,37 @@
+{
+ "name": "syn-004",
+ "order": 2,
+ "group": "Clean invoices",
+ "title": "Indian invoice in rupees",
+ "blurb": "Indian number formatting and GST. The vendor's GSTIN is checked against its check digit.",
+ "fixture": "syn-004",
+ "file": "syn-004.pdf",
+ "content_type": "application/pdf",
+ "as_of": "2026-11-10",
+ "depends_on": [],
+ "recorded": {
+  "run_id": "20261111-061513-v3",
+  "model": "gemini-3.5-flash-lite",
+  "prompt_version": "v3",
+  "prompt_sha256": "d1bc15c4be2523b6d22eaa7557522995a4f4a5c582bc506bf8b12af3b3388201",
+  "prompt_chars": 2066,
+  "schema_sha": "596f21383ab6",
+  "file_sha256": "3e31b8ffd290040578c5d7117d9f8397ba097d09fbbafe6ab0ae7a34fc2aa01a",
+  "calls": [
+   {
+    "raw_response": "{\n  \"invoice_number\": \"SSS/26-27/4080\",\n  \"invoice_date\": \"2026-07-15\",\n  \"due_date\": \"2026-07-29\",\n  \"vendor\": {\n    \"name\": \"Sahyadri Software Solutions Pvt Ltd\",\n    \"address\": \"Plot 22, Hinjewadi Phase 2 · Pune 411057, Maharashtra, India\",\n    \"tax_id\": \"27AABCS1429B1ZU\"\n  },\n  \"bill_to_name\": \"Greenfield Schools Trust\",\n  \"currency\": \"INR\",\n  \"line_items\": [\n    {\n      \"description\": \"Developer hours\",\n      \"quantity\": 30,\n      \"unit_price\": 2400.00,\n      \"amount\": 72000.00\n    },\n    {\n      \"description\": \"Developer hours\",\n      \"quantity\": 79,\n      \"unit_price\": 1900.00,\n      \"amount\": 150100.00\n    },\n    {\n      \"description\": \"Cloud migration services\",\n      \"quantity\": 1,\n      \"unit_price\": 65600.00,\n      \"amount\": 65600.00\n    },\n    {\n      \"description\": \"Training session\",\n      \"quantity\": 1,\n      \"unit_price\": 19800.00,\n      \"amount\": 19800.00\n    },\n    {\n      \"description\": \"Developer hours\",\n      \"quantity\": 53,\n      \"unit_price\": 2500.00,\n      \"amount\": 132500.00\n    },\n    {\n      \"description\": \"Cloud migration services\",\n      \"quantity\": 1,\n      \"unit_price\": 50700.00,\n      \"amount\": 50700.00\n    }\n  ],\n  \"subtotal\": 490700.00,\n  \"tax\": 88326.00,\n  \"tax_breakdown\": [\n    {\n      \"rate\": 18,\n      \"base\": null,\n      \"amount\": 88326.00\n    }\n  ],\n  \"discount\": null,\n  \"total\": 579026.00,\n  \"prices_include_tax\": false\n}",
+    "error": null,
+    "transient": false,
+    "latency_ms": 3197,
+    "input_tokens": 1107,
+    "output_tokens": 612,
+    "thinking_tokens": null
+   }
+  ]
+ },
+ "expected": {
+  "status": "approved",
+  "flags": [],
+  "flag_count": 0
+ }
+}

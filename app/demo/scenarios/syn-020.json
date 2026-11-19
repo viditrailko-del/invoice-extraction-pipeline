@@ -1,0 +1,42 @@
+{
+ "name": "syn-020",
+ "order": 7,
+ "group": "Planted mistakes",
+ "title": "Due before it was issued",
+ "blurb": "The due date is earlier than the invoice date: usually a misread day or month.",
+ "fixture": "syn-020",
+ "file": "syn-020.pdf",
+ "content_type": "application/pdf",
+ "as_of": "2026-11-10",
+ "depends_on": [],
+ "recorded": {
+  "run_id": "20261111-061513-v3",
+  "model": "gemini-3.5-flash-lite",
+  "prompt_version": "v3",
+  "prompt_sha256": "d1bc15c4be2523b6d22eaa7557522995a4f4a5c582bc506bf8b12af3b3388201",
+  "prompt_chars": 2066,
+  "schema_sha": "596f21383ab6",
+  "file_sha256": "d34d68c7779821bd022cfa850e6c5d75c24a7e0d2c01ad29a691cd80306bef5f",
+  "calls": [
+   {
+    "raw_response": "{\n  \"invoice_number\": \"F2026/6086\",\n  \"invoice_date\": \"2026-08-25\",\n  \"due_date\": \"2026-07-31\",\n  \"vendor\": {\n    \"name\": \"Atelier Lumière SARL\",\n    \"address\": \"8 Rue des Lilas, 69003 Lyon, France\",\n    \"tax_id\": \"FR40303265045\"\n  },\n  \"bill_to_name\": \"Contoso Pharmaceuticals\",\n  \"currency\": \"EUR\",\n  \"line_items\": [\n    {\n      \"description\": \"Conception graphique\",\n      \"quantity\": 3,\n      \"unit_price\": 519.35,\n      \"amount\": 1558.05\n    },\n    {\n      \"description\": \"Impression affiches A2\",\n      \"quantity\": 167,\n      \"unit_price\": 4.23,\n      \"amount\": 706.41\n    },\n    {\n      \"description\": \"Conception graphique\",\n      \"quantity\": 1,\n      \"unit_price\": 766.69,\n      \"amount\": 766.69\n    }\n  ],\n  \"subtotal\": 3031.15,\n  \"tax\": 606.23,\n  \"tax_breakdown\": [\n    {\n      \"rate\": 20,\n      \"base\": null,\n      \"amount\": 606.23\n    }\n  ],\n  \"discount\": null,\n  \"total\": 3637.38,\n  \"prices_include_tax\": false\n}",
+    "error": null,
+    "transient": false,
+    "latency_ms": 2906,
+    "input_tokens": 1107,
+    "output_tokens": 420,
+    "thinking_tokens": null
+   }
+  ]
+ },
+ "expected": {
+  "status": "needs_review",
+  "flags": [
+   [
+    "due_before_invoice",
+    "due_date"
+   ]
+  ],
+  "flag_count": 1
+ }
+}
