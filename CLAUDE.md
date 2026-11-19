@@ -172,6 +172,43 @@ docker compose run --rm -T api uv run --frozen python -m eval.run score latest  
 - **Missing `GEMINI_API_KEY`** never causes a 500: `GeminiExtractor` raises a permanent `LLMError` at call time, so uploads are stored and end `extraction_failed` (retryable); startup logs `gemini_api_key_missing`. The eval CLI refuses to start without a key.
 - README.md holds the architecture, current eval numbers and the findings → fixes table: update it when a new eval run changes the numbers.
 
+## Public live demo (Phase 7)
+
+Mirrors `../support_agent_project` Phase 8. Everything under `/demo/*` and the page at `/` exist only with
+`DEMO_MODE=true` (404 / redirect to `/docs` otherwise).
+- **Visitor sandboxes** (`app/demo/sandbox.py`): in demo mode every invoice route needs an `X-Demo-Session` header
+  (random id the page keeps); `invoices.demo_session` stores it and every lookup, dedupe and duplicate check stays
+  inside it. Idempotency key = `(file_hash, demo_session)` NULLS NOT DISTINCT = the old unique `file_hash` outside
+  the demo. A partition, not a security boundary. Migration `da9b2827cb7f`.
+- **Replay** (`app/demo/replay.py`, `POST /demo/replay/{name}`, `GET /demo/scenarios`): 13 scenarios in
+  `app/demo/scenarios/` (file + every recorded flash-lite call of eval run `20261111-061513-v3`, built by
+  `python -m demo.build_replay`, needs eval/results/). `RecordedExtractor` refuses a different file, prompt text or
+  response schema -> `extraction_failed` "replay diverged". Runs are stored as `replay:<model>` (cost None, not
+  counted by the live quota). `invoices.checks_as_of` pins the day the recording was scored, used by extraction AND
+  review re-checks. A replay deletes only the visitor's earlier copy (`app/demo/cleanup.py`). Change a check, the
+  prompt or the schema -> `tests/test_demo_replay.py` fails until the builder is re-run (re-read the blurbs).
+- **Live** (`app/demo/live.py`): upload (`POST /invoices`), retry and `POST /demo/generate` (fresh synthetic PDF
+  from `app/invoicegen.py`, optionally with one planted mistake the checks must raise exactly) all go through
+  `admit_live`: `DEMO_LIVE_DAILY_LIMIT` (20) for the whole demo + `DEMO_LIVE_PER_IP_PER_HOUR` (3), flash-lite only,
+  no fallback. Counter in memory, re-read from `extraction_runs` (non-replay models, today UTC) on the first request
+  of a day. On a demo-mode restart, `pending`/`processing` invoices end `extraction_failed` instead of re-running
+  (that would spend quota nobody was admitted for). Same file again = the stored record, no quota.
+- **Page** (`app/static/demo.html`): one file, vanilla JS, light/dark, phone width, strings via textContent only
+  (tested). Shows the document, the extraction, flags in plain words with correct/accept, the audit trail, LLM
+  calls. A failed extraction shows as "Stopped safely" with a plain reason. Preview: `.claude/launch.json` `demo`
+  (port 8004).
+- **Reset** (`app/demo/reset.py`, `POST /demo/reset` with `X-Reset-Token` = `DEMO_RESET_TOKEN`, empty = route off;
+  `python -m demo.reset` locally): deletes every sandboxed invoice and its files under UPLOAD_DIR (scenario files
+  stay). Keeps the in-memory live count (re-reading after deleting today's runs would hand out a fresh day).
+  Nightly `.github/workflows/demo-reset.yml` 00:05 UTC (variable DEMO_URL + secret DEMO_RESET_TOKEN).
+- **Deploy**: `render.yaml` (free Docker, prod stage, region virginia next to Neon US East) runs
+  `sh docker/demo-start.sh` = migrations + `fastapi run` on $PORT with proxy headers (FORWARDED_ALLOW_IPS='*').
+  `DATABASE_URL` accepts `postgres://`/`postgresql://` (Neon) and switches to psycopg. Account steps:
+  `demo/DEPLOY.md`. `python demo/check_deploy.py <url>` (stdlib) checks the page, guards and every scenario; CI runs
+  it on the prod image booted on a fresh database. Rehearsed locally 2026-11-19: 13/13, restart, token reset.
+- The free host's disk is wiped on restart: uploaded/generated documents then answer 410 (the extraction stays).
+  The per-IP cap trusts X-Forwarded-For (spoofable); the daily cap is what protects the quota.
+
 ## Scope discipline
 
 Build in phase order. Don't add queues, auth, S3, or a frontend until the eval harness (Phase 5) works.
@@ -185,6 +222,7 @@ Build in phase order. Don't add queues, auth, S3, or a frontend until the eval h
 | 4 | Review endpoints: list flagged, PATCH corrections w/ audit | done |
 | 5 | Eval harness: field accuracy, flag precision/recall, cost/latency | done (flash-lite on all 41; flash on the 10 real: run `20261111-113016-v3-merged`) |
 | 6 | Hardening: logging, Dockerfile, README with real eval numbers, CI | done |
+| 7 | Public live demo (replay, capped live, page, reset, Render + Neon) | built + rehearsed locally; deploy = account steps in `demo/DEPLOY.md`, then check from outside |
 
 Update the Status column when a phase is done.
 
