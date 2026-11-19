@@ -108,13 +108,12 @@ def demo_status(db: Db, settings: Cfg) -> DemoStatus:
 
 @router.post("/reset", include_in_schema=False)
 def reset(db: Db, settings: Cfg, x_reset_token: Annotated[str, Header()] = "") -> dict[str, int]:
-    """Nightly (GitHub Actions): delete every visitor's invoices and files. Needs X-Reset-Token."""
+    """Nightly (GitHub Actions): delete visitors' invoices from before today (UTC) and their files. Needs
+    X-Reset-Token. Today's stay, so the live quota's count survives a reset and a restart."""
     if not settings.demo_reset_token:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Not Found")
     if not hmac.compare_digest(x_reset_token.encode(), settings.demo_reset_token.encode()):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "bad reset token")
-    # The live quota's in-memory count is kept: today's runs are deleted here, so a re-read would hand out a fresh
-    # day if this ran mid-day (the nightly run is at 00:05 UTC, right after the day rolls over anyway).
     result = reset_demo(db, settings)
     log_event(log, logging.INFO, "demo_reset", **result)
     return result
