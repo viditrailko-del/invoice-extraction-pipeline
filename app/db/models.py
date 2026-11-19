@@ -1,6 +1,6 @@
 import enum
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -8,6 +8,7 @@ from sqlalchemy import (
     JSON,
     BigInteger,
     Boolean,
+    Date,
     DateTime,
     Enum,
     ForeignKey,
@@ -16,6 +17,7 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -45,10 +47,24 @@ class Severity(str, enum.Enum):
 
 class Invoice(Base):
     __tablename__ = "invoices"
+    # Idempotency key: same file -> same record, per sandbox. NULLS NOT DISTINCT makes it
+    # exactly the old "file_hash is unique" outside demo mode (every demo_session is NULL there).
+    __table_args__ = (
+        UniqueConstraint(
+            "file_hash", "demo_session", name="uq_invoices_file_hash_demo_session",
+            postgresql_nulls_not_distinct=True,
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    # SHA-256 of the file bytes: the idempotency key. Same file -> same record.
-    file_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    # SHA-256 of the file bytes.
+    file_hash: Mapped[str] = mapped_column(String(64), index=True)
+    # Public demo only (DEMO_MODE): the visitor's sandbox, a random id their browser keeps.
+    # Lookups, duplicate detection and replays stay inside one sandbox. NULL outside the demo.
+    demo_session: Mapped[str | None] = mapped_column(String(64), index=True)
+    # The date the date checks treat as "today" for this invoice (a demo replay pins the
+    # day its recording was scored). NULL = the real today.
+    checks_as_of: Mapped[date | None] = mapped_column(Date)
     original_filename: Mapped[str] = mapped_column(String(255))
     content_type: Mapped[str] = mapped_column(String(100))
     file_path: Mapped[str] = mapped_column(String(500))

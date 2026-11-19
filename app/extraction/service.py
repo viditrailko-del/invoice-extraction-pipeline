@@ -62,7 +62,8 @@ def process_invoice(
             invoice.status = InvoiceStatus.extraction_failed
         else:
             invoice.extracted_json = extracted.model_dump(mode="json")  # Decimal -> exact string
-            flags = run_checks(extracted, date.today())
+            # A demo replay pins the day its recording was scored; everything else uses today.
+            flags = run_checks(extracted, invoice.checks_as_of or date.today())
             store_check_flags(db, invoice, flags)
             flag_codes = [f.code for f in flags]
             flag_codes += [DUPLICATE_CODE] * flag_business_duplicates(db, invoice, extracted)
@@ -149,6 +150,8 @@ def flag_business_duplicates(db: Session, invoice: Invoice, extracted: Extracted
     others = db.scalars(
         select(Invoice)
         .where(Invoice.dup_key == invoice.dup_key, Invoice.id != invoice.id)
+        # Demo: only within the visitor's own sandbox (NULL = NULL outside the demo).
+        .where(Invoice.demo_session.is_not_distinct_from(invoice.demo_session))
         .order_by(Invoice.created_at)
     ).all()
     for other in others:

@@ -828,6 +828,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "python-multipart" },
     { name = "python-stdnum" },
+    { name = "reportlab" },
     { name = "sqlalchemy" },
 ]
 
@@ -836,7 +837,6 @@ dev = [
     { name = "httpx" },
     { name = "pypdfium2" },
     { name = "pytest" },
-    { name = "reportlab" },
 ]
 
 [package.metadata]
@@ -848,6 +848,7 @@ requires-dist = [
     { name = "pydantic-settings", specifier = ">=2.6" },
     { name = "python-multipart", specifier = ">=0.0.12" },
     { name = "python-stdnum", specifier = ">=2.2" },
+    { name = "reportlab", specifier = ">=5.1.0" },
     { name = "sqlalchemy", specifier = ">=2.0.36" },
 ]
 
@@ -856,7 +857,6 @@ dev = [
     { name = "httpx", specifier = ">=0.28" },
     { name = "pypdfium2", specifier = ">=5.15.2" },
     { name = "pytest", specifier = ">=8.3" },
-    { name = "reportlab", specifier = ">=5.1.0" },
 ]
 
 [[package]]

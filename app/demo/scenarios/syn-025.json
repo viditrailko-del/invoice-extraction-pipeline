@@ -1,0 +1,44 @@
+{
+ "name": "syn-025",
+ "order": 11,
+ "group": "Planted mistakes",
+ "title": "Same invoice, sent twice",
+ "blurb": "A re-sent copy of the UK invoice as a scan (a different file, so the upload isn't deduplicated by hash). Same vendor + invoice number -> flagged as a possible duplicate for a human to decide. Replays the original first if your sandbox doesn't have it yet.",
+ "fixture": "syn-025",
+ "file": "syn-025.jpg",
+ "content_type": "image/jpeg",
+ "as_of": "2026-11-10",
+ "depends_on": [
+  "syn-001"
+ ],
+ "recorded": {
+  "run_id": "20261111-061513-v3",
+  "model": "gemini-3.5-flash-lite",
+  "prompt_version": "v3",
+  "prompt_sha256": "d1bc15c4be2523b6d22eaa7557522995a4f4a5c582bc506bf8b12af3b3388201",
+  "prompt_chars": 2066,
+  "schema_sha": "596f21383ab6",
+  "file_sha256": "88ea7bc95444085b5166b6972d41a96317cfeecf259c11db800c4016b95fe281",
+  "calls": [
+   {
+    "raw_response": "{\n  \"invoice_number\": \"NW-2026-3800\",\n  \"invoice_date\": \"2026-10-31\",\n  \"due_date\": \"2026-11-14\",\n  \"vendor\": {\n    \"name\": \"Northwind Cloud Services Ltd.\",\n    \"address\": \"12 Harbour Street, Bristol BS1 4XY, United Kingdom\",\n    \"tax_id\": \"GB123456727\"\n  },\n  \"bill_to_name\": \"Pacific Rim Traders\",\n  \"currency\": \"GBP\",\n  \"line_items\": [\n    {\n      \"description\": \"Database instance db.m5\",\n      \"quantity\": 1.0,\n      \"unit_price\": 246.03,\n      \"amount\": 246.03\n    },\n    {\n      \"description\": \"Domain renewal\",\n      \"quantity\": 5.0,\n      \"unit_price\": 14.99,\n      \"amount\": 74.95\n    },\n    {\n      \"description\": \"Support hours\",\n      \"quantity\": 9.5,\n      \"unit_price\": 111.26,\n      \"amount\": 1056.97\n    }\n  ],\n  \"subtotal\": 1377.95,\n  \"tax\": 275.59,\n  \"tax_breakdown\": [\n    {\n      \"rate\": 20.0,\n      \"base\": null,\n      \"amount\": 275.59\n    }\n  ],\n  \"discount\": null,\n  \"total\": 1653.54,\n  \"prices_include_tax\": false\n}",
+    "error": null,
+    "transient": false,
+    "latency_ms": 2356,
+    "input_tokens": 1667,
+    "output_tokens": 421,
+    "thinking_tokens": null
+   }
+  ]
+ },
+ "expected": {
+  "status": "needs_review",
+  "flags": [
+   [
+    "duplicate",
+    "invoice_number"
+   ]
+  ],
+  "flag_count": 1
+ }
+}

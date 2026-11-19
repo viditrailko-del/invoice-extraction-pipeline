@@ -1,0 +1,42 @@
+{
+ "name": "syn-021",
+ "order": 8,
+ "group": "Planted mistakes",
+ "title": "Invoice date years ago",
+ "blurb": "An invoice dated more than two years back usually means a misread year. A warning, still a review.",
+ "fixture": "syn-021",
+ "file": "syn-021.pdf",
+ "content_type": "application/pdf",
+ "as_of": "2026-11-10",
+ "depends_on": [],
+ "recorded": {
+  "run_id": "20261111-061513-v3",
+  "model": "gemini-3.5-flash-lite",
+  "prompt_version": "v3",
+  "prompt_sha256": "d1bc15c4be2523b6d22eaa7557522995a4f4a5c582bc506bf8b12af3b3388201",
+  "prompt_chars": 2066,
+  "schema_sha": "596f21383ab6",
+  "file_sha256": "d334b928aa79be61ac0198fdae7401aba37b7d8c8cdc16d9deb131284bad44fb",
+  "calls": [
+   {
+    "raw_response": "{\n  \"invoice_number\": \"MLL-01917\",\n  \"invoice_date\": \"2023-07-29\",\n  \"due_date\": \"2023-08-28\",\n  \"vendor\": {\n    \"name\": \"Maple Leaf Logistics Inc.\",\n    \"address\": \"220 King St W Toronto, ON M5H 1K4, Canada\",\n    \"tax_id\": \"123456782RT0001\"\n  },\n  \"bill_to_name\": \"Müller & Söhne KG\",\n  \"currency\": \"CAD\",\n  \"line_items\": [\n    {\n      \"description\": \"Fuel surcharge\",\n      \"quantity\": 1,\n      \"unit_price\": 154.54,\n      \"amount\": 154.54\n    },\n    {\n      \"description\": \"Fuel surcharge\",\n      \"quantity\": 1,\n      \"unit_price\": 111.23,\n      \"amount\": 111.23\n    },\n    {\n      \"description\": \"FTL Toronto-Montreal\",\n      \"quantity\": 2,\n      \"unit_price\": 1400.00,\n      \"amount\": 2800.00\n    }\n  ],\n  \"subtotal\": 3065.77,\n  \"tax\": 398.55,\n  \"tax_breakdown\": [\n    {\n      \"rate\": 13,\n      \"base\": null,\n      \"amount\": 398.55\n    }\n  ],\n  \"discount\": null,\n  \"total\": 3464.32,\n  \"prices_include_tax\": false\n}",
+    "error": null,
+    "transient": false,
+    "latency_ms": 3085,
+    "input_tokens": 1107,
+    "output_tokens": 422,
+    "thinking_tokens": null
+   }
+  ]
+ },
+ "expected": {
+  "status": "needs_review",
+  "flags": [
+   [
+    "date_implausible",
+    "invoice_date"
+   ]
+  ],
+  "flag_count": 1
+ }
+}

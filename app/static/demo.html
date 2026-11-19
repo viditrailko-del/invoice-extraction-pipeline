@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Invoice Extraction Pipeline</title>
+<meta name="description" content="Live demo: Gemini reads an invoice, plain code checks every number, and anything that doesn't add up goes to a human.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%233451b2'/%3E%3Cpath d='M10 7h12v18l-3-2-3 2-3-2-3 2z' stroke='white' stroke-width='2.2' fill='none' stroke-linejoin='round'/%3E%3Cpath d='M13 13h6M13 17h4' stroke='white' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f0f2f5; --border: #dce0e6; --text: #151922;
+  --muted: #5a6474; --accent: #3451b2; --accent-text: #ffffff; --accent-soft: #e8edfb;
+  --ok: #1d7a4a; --ok-soft: #e3f4ea; --warn: #9a5b00; --warn-soft: #fdf1dc;
+  --bad: #b3261e; --bad-soft: #fbe6e4; --info: #44617f; --info-soft: #e7eef5;
+  --code: #f3f4f6; --shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.08);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1218; --surface: #161a22; --surface-2: #1d222c; --border: #2b3240; --text: #e6e9ef;
+    --muted: #98a2b3; --accent: #8fa6f0; --accent-text: #0d1430; --accent-soft: #1c2440;
+    --ok: #5fcf92; --ok-soft: #15291f; --warn: #f0b45a; --warn-soft: #2e2413;
+    --bad: #f28b82; --bad-soft: #321a19; --info: #9db7d3; --info-soft: #1a2430;
+    --code: #12151b; --shadow: none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1218; --surface: #161a22; --surface-2: #1d222c; --border: #2b3240; --text: #e6e9ef;
+  --muted: #98a2b3; --accent: #8fa6f0; --accent-text: #0d1430; --accent-soft: #1c2440;
+  --ok: #5fcf92; --ok-soft: #15291f; --warn: #f0b45a; --warn-soft: #2e2413;
+  --bad: #f28b82; --bad-soft: #321a19; --info: #9db7d3; --info-soft: #1a2430;
+  --code: #12151b; --shadow: none; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+a { color: var(--accent); }
+code, pre, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace; font-size: 13px; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+[hidden] { display: none !important; }
+
+header.top { background: var(--surface); border-bottom: 1px solid var(--border); }
+header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; padding-bottom: 14px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 17px; }
+.links { display: flex; gap: 16px; font-size: 14px; }
+
+.hero { padding: 28px 0 8px; }
+.hero h1 { font-size: clamp(22px, 3.2vw, 30px); line-height: 1.2; margin: 0 0 8px; letter-spacing: -.01em; }
+.hero p { margin: 0; color: var(--muted); max-width: 800px; }
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 18px 0 6px; }
+.flow .step { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 13px; }
+.flow .step b { font-weight: 600; }
+.flow .arrow { color: var(--muted); }
+.notice { margin: 14px 0 0; padding: 9px 12px; border-radius: 8px; background: var(--info-soft); color: var(--info); font-size: 13px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 20px; padding: 20px 0 48px; align-items: start; }
+@media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); min-width: 0; }
+.panel > .pad { padding: 16px; }
+.input-panel { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow: auto; }
+@media (max-width: 900px) { .input-panel { position: static; max-height: none; } }
+
+.tabs { display: flex; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 1; border-radius: 12px 12px 0 0; }
+.tabs button { flex: 1; background: none; border: 0; border-bottom: 2px solid transparent; padding: 12px 8px; cursor: pointer; font: inherit; font-weight: 600; color: var(--muted); }
+.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.tabs small { display: block; font-weight: 400; font-size: 12px; }
+
+.group-title { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 6px; font-weight: 600; }
+.group-title:first-child { margin-top: 0; }
+.scenario { display: block; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 11px; margin-bottom: 6px; cursor: pointer; font: inherit; color: inherit; }
+.scenario:hover { border-color: var(--accent); }
+.scenario[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.scenario .t { font-weight: 600; font-size: 14px; }
+.scenario .q { color: var(--muted); font-size: 12px; margin-top: 1px; }
+
+label { display: block; font-weight: 600; font-size: 13px; margin: 10px 0 4px; }
+label:first-child { margin-top: 0; }
+input[type=text], select, textarea { width: 100%; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; }
+input[type=file] { font: inherit; font-size: 13px; max-width: 100%; color: var(--text); }
+input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.btn { font: inherit; font-weight: 600; border: 1px solid transparent; border-radius: 8px; padding: 8px 14px; cursor: pointer; background: var(--accent); color: var(--accent-text); }
+.btn.ghost { background: var(--surface); color: var(--text); border-color: var(--border); }
+.btn.danger { background: var(--surface); color: var(--bad); border-color: var(--bad); }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+.btn[disabled] { opacity: .55; cursor: progress; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.quota { font-size: 13px; color: var(--muted); }
+.err { margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: var(--bad-soft); color: var(--bad); font-size: 13px; overflow-wrap: anywhere; }
+.caution { margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); font-size: 12px; }
+hr.sep { border: 0; border-top: 1px solid var(--border); margin: 16px 0; }
+.mine { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.mine li { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; border-top: 1px dashed var(--border); }
+.mine li:first-child { border-top: 0; }
+.mine button { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-align: left; overflow-wrap: anywhere; }
+
+.empty { padding: 48px 24px; text-align: center; color: var(--muted); }
+.empty h2 { color: var(--text); font-size: 18px; margin: 0 0 6px; }
+.working { padding: 16px; display: flex; gap: 12px; align-items: center; color: var(--muted); border-bottom: 1px solid var(--border); }
+.spinner { flex: none; width: 22px; height: 22px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+.verdict { padding: 16px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: flex-start; }
+.badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; text-transform: uppercase; letter-spacing: .03em; }
+.b-ok { background: var(--ok-soft); color: var(--ok); }
+.b-warn { background: var(--warn-soft); color: var(--warn); }
+.b-bad { background: var(--bad-soft); color: var(--bad); }
+.b-info { background: var(--info-soft); color: var(--info); }
+.verdict .sum { font-size: 16px; font-weight: 600; }
+.verdict .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.watch { margin: 0; padding: 10px 16px; background: var(--accent-soft); font-size: 14px; border-bottom: 1px solid var(--border); }
+.watch b { font-weight: 600; }
+
+section.part { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+section.part:last-child { border-bottom: 0; }
+section.part h3 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
+section.part h3 .n { color: var(--accent); }
+section.part h3 .note { text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+.doc { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.doc img { display: block; width: 100%; height: auto; }
+.doc iframe { display: block; width: 100%; height: 560px; border: 0; background: #fff; }
+@media (max-width: 600px) { .doc iframe { height: 420px; } }
+.doc .gone { padding: 18px; color: var(--muted); font-size: 13px; }
+
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.fields th[scope=row] { font-size: 13px; color: var(--muted); font-weight: 500; width: 40%; }
+td .v { overflow-wrap: anywhere; }
+.cell { background: none; border: 0; padding: 1px 3px; margin: -1px -3px; border-radius: 4px; font: inherit; color: inherit; text-align: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.cell:hover { background: var(--accent-soft); }
+.null { color: var(--muted); font-style: italic; }
+.flagged { background: var(--bad-soft); }
+.flagged.w { background: var(--warn-soft); }
+.fixed { box-shadow: inset 3px 0 0 var(--ok); }
+.page { display: block; font-size: 12px; color: var(--warn); }
+.sub-h { font-size: 12px; font-weight: 600; color: var(--muted); margin: 14px 0 4px; text-transform: uppercase; letter-spacing: .05em; }
+
+.flag { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; padding: 9px 0; border-top: 1px dashed var(--border); }
+.flag:first-child { border-top: 0; padding-top: 0; }
+.flag .badge { align-self: start; margin-top: 1px; }
+.flag .what { font-weight: 600; font-size: 14px; }
+.flag .why { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.flag.done { opacity: .7; }
+.allclear { color: var(--ok); font-weight: 600; }
+
+.editor { margin-top: 12px; padding: 12px; border: 1px solid var(--accent); border-radius: 8px; background: var(--accent-soft); }
+.editor .path { font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+.trail { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.trail li { padding: 6px 0; border-top: 1px dashed var(--border); overflow-wrap: anywhere; }
+.trail li:first-child { border-top: 0; padding-top: 0; }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.stats b { color: var(--text); font-weight: 600; }
+details summary { cursor: pointer; color: var(--muted); font-size: 12px; margin-top: 6px; }
+pre.raw { background: var(--code); border: 1px solid var(--border); border-radius: 6px; padding: 8px; max-height: 240px; overflow: auto; margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+footer { color: var(--muted); font-size: 13px; padding: 0 0 32px; }
+footer p { margin: 0 0 6px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#3451b2"/><path d="M10 7h12v18l-3-2-3 2-3-2-3 2z" stroke="#fff" stroke-width="2.2" fill="none" stroke-linejoin="round"/><path d="M13 13h6M13 17h4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>
+      Invoice Extraction Pipeline
+    </div>
+    <nav class="links">
+      <a href="/docs">API docs</a>
+      <a href="https://github.com/viditrailko-del/invoice-extraction-pipeline" rel="noopener">Source on GitHub</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+  <div class="hero">
+    <h1>The model reads the invoice. Code checks every number.</h1>
+    <p>Gemini turns an invoice (PDF or photo) into structured data that must fit a strict schema. Then plain code with
+      no AI re-does the math: line totals, subtotal, tax rows, the total, dates, the vendor's tax-ID check digit and
+      duplicates. Only an invoice where everything adds up is approved automatically; anything else goes to a human,
+      who can correct it with a full audit trail.</p>
+    <div class="flow" aria-label="How an invoice flows">
+      <span class="step"><b>Invoice</b> PDF / image</span><span class="arrow">→</span>
+      <span class="step"><b>Gemini</b> structured output</span><span class="arrow">→</span>
+      <span class="step"><b>Schema</b> validation</span><span class="arrow">→</span>
+      <span class="step"><b>Checks</b> in code</span><span class="arrow">→</span>
+      <span class="step"><b>Approved</b> or <b>needs review</b></span>
+    </div>
+    <div class="notice">Measured, not claimed: on 41 labeled invoices (31 synthetic, 10 real Portuguese receipts) the
+      checks flagged 100% of the planted mistakes, and flash-lite read 99.2% of fields right. One real receipt was
+      wrongly auto-approved (a vendor name read as trading + legal name combined). Details and the full eval are in
+      the README. Everything you do here stays in your own sandbox and is deleted nightly.</div>
+  </div>
+  <div class="grid">
+    <div class="panel input-panel">
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-rec" aria-selected="true" aria-controls="pane-rec">Recorded invoices<small>no AI call · instant</small></button>
+        <button role="tab" id="tab-live" aria-selected="false" aria-controls="pane-live">Try it live<small>real Gemini</small></button>
+      </div>
+      <div class="pad" id="pane-rec" role="tabpanel" aria-labelledby="tab-rec">
+        <div id="scenarios"><div class="hint">Loading…</div></div>
+        <p class="hint">Each one replays what Gemini really answered in an evaluation run. Validation, the checks and
+          the verdict run now, on the current code.</p>
+      </div>
+      <div class="pad" id="pane-live" role="tabpanel" aria-labelledby="tab-live" hidden>
+        <form id="gen-form">
+          <label for="plant">Generate a fresh invoice</label>
+          <select id="plant"><option value="">No mistake (should be approved)</option></select>
+          <div class="hint">A new random vendor, layout and numbers each time. Plant a mistake and see whether the
+            checks catch it; you'll also see what the page really says next to what Gemini read.</div>
+          <div class="row"><button class="btn live-btn" type="submit">Generate and extract</button></div>
+        </form>
+        <hr class="sep">
+        <form id="up-form">
+          <label for="file">Or upload an invoice</label>
+          <input type="file" id="file" accept="application/pdf,image/png,image/jpeg" required>
+          <div class="hint">PDF, PNG or JPG, up to <span id="maxmb">5</span> MB.</div>
+          <div class="caution">Don't upload real invoices with personal data: the demo runs on Gemini's free tier,
+            where Google may use inputs to improve its models. Files are deleted nightly.</div>
+          <div class="row"><button class="btn live-btn" type="submit">Upload and extract</button></div>
+        </form>
+        <div class="row"><span class="quota" id="quota"></span></div>
+        <div class="err" id="live-err" hidden></div>
+      </div>
+      <div class="pad" id="mine-box" hidden>
+        <div class="group-title">Your invoices</div>
+        <ul class="mine" id="mine"></ul>
+      </div>
+    </div>
+    <div class="panel" id="result" aria-live="polite">
+      <div class="empty">
+        <h2>Pick a recorded invoice, or try one live</h2>
+        <div>You'll see the document, what the model extracted, what the checks found, and you can review it.</div>
+      </div>
+    </div>
+  </div>
+  <footer>
+    <p>All invoices here are synthetic: the vendors, numbers and tax IDs are made up (tax IDs with valid check
+      digits). Prices in "cost" are paid-tier list prices; the demo itself runs on the free tier.</p>
+    <p>The free server sleeps when nobody uses it: the first visit can take about a minute.</p>
+  </footer>
+</div>
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+// Builds DOM with textContent only: every string from the API (file names, extracted text) is untrusted.
+function el(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") n.className = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat()) if (k != null && k !== false) n.append(k instanceof Node ? k : String(k));
+  return n;
+}
+
+// ------------------------------------------------------------------ sandbox + API
+// Your sandbox: a random id this browser keeps. Every request carries it; you only ever see your own invoices.
+const SANDBOX = (() => {
+  const fresh = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
+  try {
+    let id = localStorage.getItem("demo-sandbox");
+    if (!id || !/^[A-Za-z0-9_-]{16,64}$/.test(id)) { id = fresh(); localStorage.setItem("demo-sandbox", id); }
+    return id;
+  } catch { return fresh(); }
+})();
+async function api(path, opts = {}) {
+  const headers = { "X-Demo-Session": SANDBOX, ...(opts.body && !(opts.body instanceof FormData) ? { "Content-Type": "application/json" } : {}) };
+  const r = await fetch(path, { ...opts, headers });
+  let data = null;
+  try { data = await r.json(); } catch { /* not JSON */ }
+  if (!r.ok) {
+    const d = data && data.detail;
+    const msg = typeof d === "string" ? d : Array.isArray(d) ? d.map((e) => (typeof e === "string" ? e : e.msg)).join("; ") : `HTTP ${r.status}`;
+    const e = new Error(msg); e.status = r.status; throw e;
+  }
+  return data;
+}
+const post = (path, body) => api(path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) });
+
+// ------------------------------------------------------------------ plain-English labels
+const FLAG = {
+  line_math: "A line's amount isn't quantity × unit price",
+  subtotal_mismatch: "The subtotal isn't the sum of the lines",
+  total_mismatch: "The total doesn't add up",
+  tax_line_math: "A tax row isn't base × rate",
+  tax_breakdown_mismatch: "The tax rows don't add up to the tax total",
+  tax_base_mismatch: "Tax bases plus tax don't reach the total",
+  tax_total_missing: "Tax rows were read, but the tax total is empty",
+  tax_id_invalid: "The vendor's tax ID fails its check digit (a misread digit?)",
+  negative_amount: "A negative amount (a credit note?)",
+  due_before_invoice: "Due before the invoice was issued",
+  date_implausible: "The invoice date is in the future or over 2 years old",
+  missing_field: "A required field is missing",
+  duplicate: "Possible duplicate: same vendor and invoice number as another invoice",
+};
+const SEV = { error: ["error", "b-bad"], warning: ["warning", "b-warn"] };
+const FIELDS = [
+  ["invoice_number", "Invoice number"], ["invoice_date", "Invoice date"], ["due_date", "Due date"],
+  ["vendor.name", "Vendor"], ["vendor.address", "Vendor address"], ["vendor.tax_id", "Vendor tax ID"],
+  ["bill_to_name", "Billed to"], ["currency", "Currency"], ["prices_include_tax", "Prices include tax"],
+  ["subtotal", "Subtotal"], ["discount", "Discount"], ["tax", "Tax"], ["total", "Total"],
+];
+// Why an extraction stopped, for a visitor. Each is the system working as designed: no crash, no guessed data.
+function failedReason(inv) {
+  const errors = (inv.runs || []).map((c) => c.error || "").join(" ");
+  if (!inv.runs || !inv.runs.length) return "The server restarted while this was waiting (a free instance sleeps when idle). Press retry to run it again.";
+  if (/replay diverged/.test(errors)) return "This recording no longer matches the current prompt, schema or file, so it wasn't replayed rather than shown out of context.";
+  if (/GEMINI_API_KEY/.test(errors)) return "The live model isn't configured on this server right now. The recorded invoices still work.";
+  if (/per day|PerDay/i.test(errors)) return "Gemini's free daily quota is used up. The recorded invoices still work; live mode is back tomorrow.";
+  if (/^validation|\svalidation/.test(errors)) return "The model's answer broke the required schema twice, so it was rejected instead of guessed at.";
+  if (/503|overload|UNAVAILABLE|500|502|504|429|timeout|network/i.test(errors)) return "Gemini is overloaded or unreachable right now (it retried, then gave up). Try a recorded invoice, or retry in a few minutes.";
+  return "The model couldn't read this document, so nothing was stored as extracted.";
+}
+
+// ------------------------------------------------------------------ helpers
+// "a.b[2].c" -> value, or undefined
+function getAt(obj, path) {
+  let cur = obj;
+  for (const part of path.match(/[^.[\]]+/g) || []) {
+    if (cur == null) return undefined;
+    cur = cur[/^\d+$/.test(part) ? Number(part) : part];
+  }
+  return cur;
+}
+const isNum = (v) => typeof v === "number" || (typeof v === "string" && /^-?\d+(\.\d+)?$/.test(v.trim()));
+// Same value as printed? Numbers as numbers ("6300.00" = "6300"); text like the eval scores it, ignoring case,
+// spacing, punctuation and accents (an address printed on two lines may come back joined with "," or "·").
+function same(a, b) {
+  if ((a == null || a === "") && (b == null || b === "")) return true;
+  if (a == null || b == null) return false;
+  if (isNum(a) && isNum(b)) return Number(a) === Number(b);
+  const norm = (x) => String(x).normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  return norm(a) === norm(b);
+}
+function show(v) {
+  if (v === null || v === undefined || v === "") return el("span", { class: "null" }, "none");
+  if (typeof v === "boolean") return v ? "yes" : "no";
+  return String(v);
+}
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+
+// ------------------------------------------------------------------ input panel
+let scenarios = [], busy = false, current = null, docUrl = null, pollTimer = null;
+const printedById = new Map(); // generated invoices: what the page really says (kept in this tab only)
+const context = new Map();     // invoice id -> {blurb} shown as "what to watch for"
+
+function selectTab(live) {
+  $("#tab-rec").setAttribute("aria-selected", String(!live));
+  $("#tab-live").setAttribute("aria-selected", String(live));
+  $("#pane-rec").hidden = live;
+  $("#pane-live").hidden = !live;
+  if (live) refreshStatus();
+}
+$("#tab-rec").addEventListener("click", () => selectTab(false));
+$("#tab-live").addEventListener("click", () => selectTab(true));
+
+function renderScenarios() {
+  const box = $("#scenarios");
+  box.replaceChildren();
+  let group = null;
+  for (const s of scenarios) {
+    if (s.group !== group) { group = s.group; box.append(el("div", { class: "group-title" }, group)); }
+    box.append(el("button", { class: "scenario", type: "button", "aria-pressed": "false", "data-name": s.name, onclick: () => runScenario(s) },
+      el("div", { class: "t" }, s.title), el("div", { class: "q" }, s.file)));
+  }
+}
+function setBusy(on) {
+  busy = on;
+  document.querySelectorAll(".scenario, .live-btn").forEach((b) => b.disabled = on);
+}
+function liveError(msg) { $("#live-err").textContent = msg; $("#live-err").hidden = !msg; }
+
+async function runScenario(s) {
+  if (busy) return;
+  document.querySelectorAll(".scenario").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.name === s.name)));
+  setBusy(true);
+  showWorking(s.depends_on && s.depends_on.length ? "Replaying the original invoice first, then this one…" : "Replaying the recorded answer and running the checks…");
+  try {
+    const inv = await post(`/demo/replay/${encodeURIComponent(s.name)}`);
+    context.set(inv.id, { blurb: s.blurb });
+    await openInvoice(inv);
+  } catch (err) { showError(err.message); }
+  finally { setBusy(false); refreshMine(); }
+}
+
+async function refreshStatus() {
+  try {
+    const s = await api("/demo/status");
+    $("#quota").textContent = `${s.live_left_today} of ${s.live_daily_limit} live extractions left today · ${s.live_model}`;
+    $("#maxmb").textContent = String(s.max_upload_mb);
+    $("#file").dataset.max = String(s.max_upload_mb);
+    const sel = $("#plant");
+    if (sel.options.length === 1) for (const [k, label] of Object.entries(s.plants)) sel.append(el("option", { value: k }, label));
+  } catch { $("#quota").textContent = ""; }
+}
+
+$("#gen-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (busy) return;
+  liveError("");
+  setBusy(true);
+  showWorking("Drawing a new invoice and sending it to Gemini…");
+  try {
+    const plant = $("#plant").value || null;
+    const g = await post("/demo/generate", { plant });
+    printedById.set(g.invoice.id, g.printed);
+    const what = plant ? `Planted mistake: ${$("#plant").selectedOptions[0].textContent}. The checks should raise ${g.planted.join(" + ")}.`
+                       : "No mistake planted: if Gemini reads it right, every check passes and it's approved.";
+    context.set(g.invoice.id, { blurb: `Generated just now: ${g.description}. ${what}` });
+    await openInvoice(g.invoice);
+  } catch (err) { showError(err.message); liveError(err.message); }
+  finally { setBusy(false); refreshStatus(); refreshMine(); }
+});
+
+$("#up-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (busy) return;
+  liveError("");
+  const f = $("#file").files[0];
+  if (!f) return;
+  const max = Number($("#file").dataset.max || 5);
+  if (f.size > max * 1024 * 1024) { liveError(`That file is over ${max} MB.`); return; }
+  setBusy(true);
+  showWorking("Uploading and sending it to Gemini…");
+  try {
+    const body = new FormData();
+    body.append("file", f, f.name);
+    const r = await api("/invoices", { method: "POST", body });
+    context.set(r.invoice.id, { blurb: r.duplicate ? "You uploaded this exact file before: same bytes, same record, no second model call (idempotent upload)." : "Your upload, read by Gemini just now." });
+    await openInvoice(r.invoice);
+  } catch (err) { showError(err.message); liveError(err.message); }
+  finally { setBusy(false); refreshStatus(); refreshMine(); }
+});
+
+async function refreshMine() {
+  try {
+    const list = await api("/invoices?limit=20");
+    $("#mine-box").hidden = list.length === 0;
+    $("#mine").replaceChildren(...list.map((i) => el("li", {},
+      el("span", { class: "badge " + statusLook(i.status)[1] }, statusLook(i.status)[0]),
+      el("button", { type: "button", onclick: () => { if (!busy) openInvoice(i); } }, i.original_filename))));
+  } catch { /* the list is a convenience */ }
+}
+
+// ------------------------------------------------------------------ result panel
+function showWorking(text) {
+  $("#result").replaceChildren(el("div", { class: "working" }, el("div", { class: "spinner" }), text));
+  if (window.innerWidth <= 900) $("#result").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function showError(msg) {
+  $("#result").replaceChildren(el("div", { class: "empty" }, el("h2", {}, "That didn't go through"), msg));
+}
+function statusLook(st) {
+  return {
+    approved: ["approved", "b-ok"], needs_review: ["needs review", "b-warn"], extraction_failed: ["failed", "b-info"],
+    rejected: ["rejected", "b-bad"], pending: ["waiting", "b-info"], processing: ["reading", "b-info"],
+  }[st] || [st, "b-info"];
+}
+
+// Open an invoice (any shape with an id): fetch the full demo view, poll while Gemini works.
+async function openInvoice(inv) {
+  clearTimeout(pollTimer);
+  const full = await api(`/demo/invoices/${inv.id}`);
+  full._trail = full.extracted_json ? await api(`/invoices/${inv.id}/corrections`).catch(() => []) : [];
+  current = full;
+  await render(full);
+  if (full.status === "pending" || full.status === "processing") poll(full.id, Date.now());
+}
+function poll(id, started) {
+  pollTimer = setTimeout(async () => {
+    if (!current || current.id !== id) return;
+    try {
+      const full = await api(`/demo/invoices/${id}`);
+      if (!current || current.id !== id) return;
+      current = full;
+      if (full.status === "pending" || full.status === "processing") {
+        if (Date.now() - started < 180000) poll(id, started);
+        updateWorking(started);
+      } else { full._trail = []; await render(full); refreshMine(); }
+    } catch { if (Date.now() - started < 180000) poll(id, started); }
+  }, 1500);
+}
+function updateWorking(started) {
+  const w = $("#result .working .txt");
+  if (w) w.textContent = `Gemini is reading the document… ${Math.round((Date.now() - started) / 1000)} s (usually 2 to 10 s; up to a minute when Gemini is busy)`;
+}
+
+async function loadDoc(inv) {
+  if (docUrl) { URL.revokeObjectURL(docUrl); docUrl = null; }
+  const box = el("div", { class: "doc" });
+  try {
+    const r = await fetch(`/demo/invoices/${inv.id}/file`, { headers: { "X-Demo-Session": SANDBOX } });
+    if (!r.ok) throw new Error(r.status === 410 ? "The document is no longer stored: the free server restarted since it was uploaded. The extraction below is still here." : `HTTP ${r.status}`);
+    docUrl = URL.createObjectURL(await r.blob());
+    if (inv.content_type === "application/pdf") {
+      box.append(el("iframe", { src: docUrl, title: "The invoice document" }));
+      return [box, el("div", { class: "hint" }, el("a", { href: docUrl, target: "_blank", rel: "noopener" }, "Open the PDF in a new tab"), " (if it doesn't show above, e.g. on a phone)")];
+    }
+    box.append(el("img", { src: docUrl, alt: "The invoice document" }));
+    return [box];
+  } catch (err) {
+    box.append(el("div", { class: "gone" }, err.message));
+    return [box];
+  }
+}
+
+function verdict(inv) {
+  const open = inv.flags.filter((f) => !f.resolved);
+  const corrected = inv.corrected_json != null;
+  switch (inv.status) {
+    case "approved": return ["Approved", "b-ok", corrected || inv.flags.length ? "Approved after review." : "Approved automatically: every check passed.",
+      corrected || inv.flags.length ? "Every flag is fixed or accepted by a reviewer; the history is kept below." : "No human needed. Each number Gemini returned was re-checked in code."];
+    case "needs_review": return ["Needs review", "b-warn", `Sent to a human: ${plural(open.length, "open flag")}.`,
+      "Something doesn't add up, so it isn't approved. Fix a value (click it) or accept it as correct."];
+    case "rejected": return ["Rejected", "b-bad", "A reviewer rejected this invoice.", "Final: the reason is in the audit trail."];
+    case "extraction_failed": return ["Stopped safely", "b-info", "No data was extracted.", failedReason(inv)];
+    default: return ["Reading", "b-info", "Gemini is reading the document…", ""];
+  }
+}
+
+async function render(inv) {
+  const panel = $("#result");
+  const reviewable = inv.status === "needs_review" || inv.status === "approved";
+  const data = inv.corrected_json || inv.extracted_json;
+  const printed = printedById.get(inv.id);
+  const ctx = context.get(inv.id);
+  const replayed = inv.runs.some((r) => r.model.startsWith("replay:"));
+  const openByPath = new Map();
+  for (const f of inv.flags) if (!f.resolved) openByPath.set(f.field_path, f.severity === "error" ? "flagged" : "flagged w");
+  let n = 0;
+  const part = (title, note, ...kids) => el("section", { class: "part" },
+    el("h3", {}, el("span", {}, el("span", { class: "n" }, String(++n)), " ", title), note ? el("span", { class: "note" }, note) : null), ...kids);
+
+  const [badge, cls, sum, sub] = verdict(inv);
+  const kids = [];
+  if (inv.status === "pending" || inv.status === "processing") kids.push(el("div", { class: "working" }, el("div", { class: "spinner" }), el("span", { class: "txt" }, "Gemini is reading the document…")));
+  else kids.push(el("div", { class: "verdict" }, el("span", { class: "badge " + cls }, badge),
+    el("div", {}, el("div", { class: "sum" }, sum), sub ? el("div", { class: "sub" }, sub) : null)));
+  if (ctx) kids.push(el("p", { class: "watch" }, el("b", {}, "What to watch for: "), ctx.blurb));
+  if (inv.status === "extraction_failed") kids.push(el("section", { class: "part" }, el("div", { class: "row" },
+    el("button", { class: "btn small", type: "button", onclick: () => retry(inv) }, "Retry with live Gemini"),
+    el("span", { class: "hint" }, "Costs one live extraction."))));
+
+  kids.push(part("The document", inv.original_filename, ...(await loadDoc(inv))));
+
+  if (data) {
+    // Header fields
+    const editable = (path, value, cellCls) => {
+      const content = show(value);
+      const cell = reviewable ? el("button", { class: "cell", type: "button", title: "Correct this value", onclick: () => openEditor(inv, path, value) }, content) : el("span", { class: "v" }, content);
+      return cell;
+    };
+    const pageNote = (path) => {
+      if (!printed) return null;
+      const p = getAt(printed, path), got = getAt(data, path);
+      return same(p, got) ? null : el("span", { class: "page" }, "on the page: ", p == null ? "nothing" : String(p));
+    };
+    const rows = FIELDS.map(([path, label]) => el("tr", { class: [openByPath.get(path), correctedPaths(inv).has(path) ? "fixed" : ""].join(" ").trim() || null },
+      el("th", { scope: "row" }, label), el("td", { class: isNum(getAt(data, path)) && path !== "invoice_number" ? "num" : null }, editable(path, getAt(data, path)), pageNote(path))));
+    const lineRows = (data.line_items || []).map((l, i) => el("tr", {},
+      ...[["description", false], ["quantity", true], ["unit_price", true], ["amount", true]].map(([k, num]) => {
+        const path = `line_items[${i}].${k}`;
+        return el("td", { class: [num ? "num" : "", openByPath.get(path) || "", correctedPaths(inv).has(path) ? "fixed" : ""].join(" ").trim() || null },
+          editable(path, l[k]), pageNote(path));
+      })));
+    const taxRows = (data.tax_breakdown || []).map((t, i) => el("tr", {},
+      ...["rate", "base", "amount"].map((k) => {
+        const path = `tax_breakdown[${i}].${k}`;
+        return el("td", { class: ["num", openByPath.get(path) || "", correctedPaths(inv).has(path) ? "fixed" : ""].join(" ").trim() },
+          editable(path, t[k]), k === "rate" && t[k] != null ? "%" : null, pageNote(path));
+      })));
+    kids.push(part("What Gemini extracted", (replayed ? "recorded answer" : "live answer") + (inv.corrected_json ? ", with your corrections" : "") + (reviewable ? " · click a value to correct it" : ""),
+      el("div", { class: "tablewrap" }, el("table", { class: "fields" }, el("tbody", {}, rows))),
+      el("div", { class: "sub-h" }, `Line items (${(data.line_items || []).length})`),
+      el("div", { class: "tablewrap" }, el("table", {},
+        el("thead", {}, el("tr", {}, el("th", {}, "Description"), el("th", { class: "num" }, "Qty"), el("th", { class: "num" }, "Unit price"), el("th", { class: "num" }, "Amount"))),
+        el("tbody", {}, lineRows))),
+      taxRows.length ? [el("div", { class: "sub-h" }, "Tax rows"),
+        el("div", { class: "tablewrap" }, el("table", {},
+          el("thead", {}, el("tr", {}, el("th", { class: "num" }, "Rate"), el("th", { class: "num" }, "Base"), el("th", { class: "num" }, "Tax"))),
+          el("tbody", {}, taxRows)))] : null,
+      printed ? el("div", { class: "hint" }, sameAll(printed, data) ? "Every field matches what the generated page really says." : "Orange notes show where the extraction differs from what the generated page really says.") : null,
+      el("div", { id: "editor-slot" })));
+
+    // Checks
+    kids.push(part("What the checks found", `plain code, no AI · dates checked as of ${inv.checks_as_of || "today"}`,
+      inv.flags.length ? inv.flags.map((f) => {
+        const [sevText, sevCls] = SEV[f.severity] || SEV.warning;
+        return el("div", { class: "flag" + (f.resolved ? " done" : "") },
+          el("span", { class: "badge " + (f.resolved ? "b-ok" : sevCls) }, f.resolved ? "resolved" : sevText),
+          el("div", {},
+            el("div", { class: "what" }, FLAG[f.code] || f.code),
+            el("div", { class: "why" }, el("code", {}, f.field_path), " · ", f.reason),
+            f.resolved ? el("div", { class: "why" }, "Resolved by ", f.resolved_by, f.resolution_note ? `: ${f.resolution_note}` : "") : null,
+            !f.resolved && reviewable ? el("div", { class: "row" },
+              el("button", { class: "btn small", type: "button", onclick: () => openEditor(inv, f.field_path, getAt(data, f.field_path)) }, "Correct the value"),
+              el("button", { class: "btn small ghost", type: "button", onclick: () => openResolve(inv, f) }, "Accept as correct")) : null,
+            el("div", { class: "resolve-slot", "data-flag": f.id })));
+      }) : el("div", { class: "allclear" }, "No flags: line math, subtotal, tax, total, dates, tax ID and duplicates all check out.")));
+
+    // Review
+    if (reviewable || inv.status === "rejected") kids.push(part("Review and audit trail", "every change is appended, nothing is overwritten",
+      trailList(inv),
+      reviewable ? el("form", { class: "row", onsubmit: (e) => { e.preventDefault(); reject(inv); } },
+        el("input", { type: "text", id: "reject-reason", placeholder: "Reason, e.g. not an invoice", maxlength: "200", required: true, "aria-label": "Rejection reason", style: "flex:1;min-width:180px" }),
+        el("button", { class: "btn small danger", type: "submit" }, "Reject invoice")) : null));
+  }
+
+  // Numbers
+  const calls = inv.runs;
+  const tokens = calls.reduce((t, c) => t + (c.input_tokens || 0) + (c.output_tokens || 0), 0);
+  const ms = calls.reduce((t, c) => t + (c.latency_ms || 0), 0);
+  const cost = calls.reduce((t, c) => t + (c.cost_usd != null ? Number(c.cost_usd) : 0), 0);
+  const model = calls.length ? calls[calls.length - 1].model.replace(/^replay:/, "") : "none";
+  if (calls.length) kids.push(el("section", { class: "part" }, el("div", { class: "stats" },
+    el("span", {}, el("b", {}, calls.length), calls.length === 1 ? " model call" : " model calls"),
+    el("span", {}, "model ", el("b", {}, model)),
+    el("span", {}, el("b", {}, tokens.toLocaleString()), " tokens"),
+    el("span", {}, el("b", {}, (ms / 1000).toFixed(1) + " s"), replayed ? " model time (when recorded)" : " model time"),
+    el("span", {}, replayed ? "no cost: recorded" : el("span", {}, el("b", {}, "$" + cost.toFixed(4)), " at paid-tier prices")),
+    el("span", {}, "prompt ", el("b", {}, calls[0].prompt_version))),
+    calls.some((c) => c.error) ? el("details", {}, el("summary", {}, "model call errors (each one was retried or handled)"),
+      el("pre", { class: "raw" }, calls.map((c, i) => `#${i + 1} ${c.error ? c.error.slice(0, 400) : "ok"}`).join("\n"))) : null));
+
+  if (!current || current.id !== inv.id) return;
+  panel.replaceChildren(...kids);
+}
+const sameAll = (printed, data) => [...FIELDS.map(([p]) => p),
+  ...(printed.line_items || []).flatMap((_, i) => ["description", "quantity", "unit_price", "amount"].map((k) => `line_items[${i}].${k}`))]
+  .every((p) => same(getAt(printed, p), getAt(data, p))) && (printed.line_items || []).length === (data.line_items || []).length;
+function correctedPaths(inv) { return new Set((inv._trail || []).map((c) => c.field_path)); }
+
+function trailList(inv) {
+  const resolved = inv.flags.filter((f) => f.resolved && f.resolved_by);
+  const items = [
+    ...inv._trail.map((c) => c.field_path === "status"
+      ? el("li", {}, el("b", {}, c.corrected_by), " rejected the invoice", c.note ? `: ${c.note}` : "")
+      : el("li", {}, el("b", {}, c.corrected_by), " changed ", el("code", {}, c.field_path), ": ",
+        c.old_value == null ? "none" : String(c.old_value), " → ", c.new_value == null ? "none" : String(c.new_value), c.note ? ` (${c.note})` : "")),
+    ...resolved.map((f) => el("li", {}, el("b", {}, f.resolved_by), " resolved ", el("code", {}, f.code), f.resolution_note ? `: ${f.resolution_note}` : "")),
+  ];
+  return items.length ? el("ul", { class: "trail" }, items)
+    : el("div", { class: "hint" }, "No human changes yet. The model's original answer is stored and never modified; corrections are kept separately.");
+}
+
+// ------------------------------------------------------------------ review actions
+function reviewer() { return "demo visitor"; }
+function openEditor(inv, path, value) {
+  const slot = $("#editor-slot");
+  if (!slot) return;
+  const input = el("input", { type: "text", value: value == null ? "" : String(value), "aria-label": "New value" });
+  const note = el("input", { type: "text", placeholder: "Why (optional), e.g. misread 7 as 1", maxlength: "200", "aria-label": "Note" });
+  const err = el("div", { class: "err", hidden: true });
+  slot.replaceChildren(el("form", { class: "editor", onsubmit: async (e) => {
+      e.preventDefault();
+      const raw = input.value.trim();
+      try {
+        await api(`/invoices/${inv.id}`, { method: "PATCH", body: JSON.stringify({ corrected_by: reviewer(), note: note.value.trim() || null,
+          changes: [{ field_path: path, value: raw === "" ? null : raw }] }) });
+        await openInvoice(inv);
+      } catch (x) { err.textContent = x.message; err.hidden = false; }
+    } },
+    el("div", {}, "Correct ", el("span", { class: "path" }, path)),
+    el("label", {}, "New value"), input,
+    el("div", { class: "hint" }, "Money and quantities as plain numbers (1234.50), dates as YYYY-MM-DD, empty for none. The checks re-run after saving."),
+    el("label", {}, "Note"), note,
+    el("div", { class: "row" }, el("button", { class: "btn small", type: "submit" }, "Save correction"),
+      el("button", { class: "btn small ghost", type: "button", onclick: () => slot.replaceChildren() }, "Cancel")),
+    err));
+  slot.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  input.focus();
+}
+function openResolve(inv, f) {
+  const slot = document.querySelector(`.resolve-slot[data-flag="${CSS.escape(f.id)}"]`);
+  if (!slot) return;
+  const note = el("input", { type: "text", placeholder: "Why it's fine, e.g. a real credit note", maxlength: "200", "aria-label": "Note" });
+  const err = el("div", { class: "err", hidden: true });
+  slot.replaceChildren(el("form", { class: "row", onsubmit: async (e) => {
+      e.preventDefault();
+      try {
+        await post(`/invoices/${inv.id}/flags/${f.id}/resolve`, { resolved_by: reviewer(), note: note.value.trim() || null });
+        await openInvoice(inv);
+      } catch (x) { err.textContent = x.message; err.hidden = false; }
+    } }, note, el("button", { class: "btn small", type: "submit" }, "Accept"), err));
+  note.focus();
+}
+async function reject(inv) {
+  const reason = ($("#reject-reason").value || "").trim();
+  if (!reason) return;
+  try { await post(`/invoices/${inv.id}/reject`, { rejected_by: reviewer(), reason }); await openInvoice(inv); refreshMine(); }
+  catch (x) { showError(x.message); }
+}
+async function retry(inv) {
+  if (busy) return;
+  setBusy(true);
+  try { await post(`/invoices/${inv.id}/retry`); await openInvoice(inv); }
+  catch (x) { showError(x.message); }
+  finally { setBusy(false); refreshStatus(); }
+}
+
+// ------------------------------------------------------------------ start
+(async () => {
+  try {
+    scenarios = await api("/demo/scenarios");
+    renderScenarios();
+  } catch (err) { $("#scenarios").replaceChildren(el("div", { class: "err" }, "Couldn't load the invoices: " + err.message)); }
+  refreshStatus();
+  refreshMine();
+})();
+</script>
+</body>
+</html>

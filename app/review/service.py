@@ -115,7 +115,7 @@ def apply_corrections(
         return invoice  # nothing actually differed: no history, no re-check
 
     invoice.corrected_json = after
-    _recheck(db, invoice, corrected, today)
+    _recheck(db, invoice, corrected, invoice.checks_as_of or today)
     _derive_status(db, invoice)
     db.commit()
     return invoice

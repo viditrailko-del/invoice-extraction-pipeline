@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     log_format: str = "text"  # "json" in the production image: one JSON object per line
     log_level: str = "INFO"
 
+    # --- public demo (Phase 7; app/demo) ---
+    demo_mode: bool = False  # /demo/* routes and the demo page; every invoice lives in a visitor sandbox
+    demo_live_model: str = "gemini-3.5-flash-lite"  # live extractions only; no fallback model
+    demo_live_daily_limit: int = 20  # live extractions per UTC day for the whole demo (free tier)
+    demo_live_per_ip_per_hour: int = 3
+    demo_reset_token: str = ""  # POST /demo/reset (nightly); empty = route off
+
 
 @lru_cache
 def get_settings() -> Settings:
