@@ -10,9 +10,7 @@ every number is re-checked in code, every answer is stored before it's parsed, e
 human correction is audited, and an eval harness measures how often a wrong extraction
 would slip through unnoticed.
 
-Built with [Claude Code](https://claude.com/claude-code) as a pair programmer. I made
-the design and scope decisions, verified the real-receipt labels by hand, and reviewed
-the changes.
+I architected the extraction and verification pipeline, wrote the deterministic math and tax-ID check rules, built the 41-invoice eval harness, and verified every real-receipt label by hand using Claude Code as a pair-programming tool during implementation.
 
 ## Try it: live demo
 
